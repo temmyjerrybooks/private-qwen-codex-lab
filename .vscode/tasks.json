@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Borger: compile extension",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": [
+        "run",
+        "compile"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/apps/vscode-extension"
+      },
+      "group": "build",
+      "problemMatcher": "$tsc"
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "name": "borger-vscode-agent",
+  "displayName": "Borger",
+  "description": "Private VS Code coding-agent extension.",
+  "version": "0.1.0",
+  "publisher": "private",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:borger.agentView",
+    "onCommand:borger.openAgent",
+    "onCommand:borger.inspectWorkspace",
+    "onCommand:borger.testModelConnection",
+    "onCommand:borger.planTask"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "diff": "^5.2.0",
+    "execa": "^9.3.0",
+    "fast-glob": "^3.3.2",
+    "ignore": "^5.3.2",
+    "nanoid": "^5.0.7",
+    "openai": "^4.56.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.4"
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Borger",
+      "properties": {
+        "borger.litellmBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:4000/v1",
+          "description": "OpenAI-compatible LiteLLM base URL."
+        },
+        "borger.model": {
+          "type": "string",
+          "default": "qwen3-coder-next-abliterated-h200",
+          "description": "Model alias used through LiteLLM."
+        },
+        "borger.mode": {
+          "type": "string",
+          "default": "plan",
+          "enum": [
+            "ask",
+            "plan",
+            "edit",
+            "fix",
+            "auto",
+            "commit"
+          ],
+          "description": "Default Borger agent mode."
+        },
+        "borger.maxContextFiles": {
+          "type": "number",
+          "default": 80,
+          "minimum": 1,
+          "description": "Maximum files to include in workspace context scans."
+        },
+        "borger.maxFileSizeKb": {
+          "type": "number",
+          "default": 300,
+          "minimum": 1,
+          "description": "Maximum file size Borger should read for context."
+        },
+        "borger.confirmBeforeApply": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before applying proposed changes."
+        },
+        "borger.confirmBeforeTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before running terminal commands."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "borger.openAgent",
+        "title": "Borger: Open Agent"
+      },
+      {
+        "command": "borger.inspectWorkspace",
+        "title": "Borger: Inspect Workspace"
+      },
+      {
+        "command": "borger.testModelConnection",
+        "title": "Borger: Test Model Connection"
+      },
+      {
+        "command": "borger.planTask",
+        "title": "Borger: Plan Task"
+      },
+      {
+        "command": "borger.askAboutFile",
+        "title": "Borger: Ask About Current File"
+      },
+      {
+        "command": "borger.explainSelection",
+        "title": "Borger: Explain Selection"
+      },
+      {
+        "command": "borger.fixSelection",
+        "title": "Borger: Fix Selection"
+      },
+      {
+        "command": "borger.generateTests",
+        "title": "Borger: Generate Tests"
+      },
+      {
+        "command": "borger.refactorSelection",
+        "title": "Borger: Refactor Selection"
+      },
+      {
+        "command": "borger.runAgentTask",
+        "title": "Borger: Run Agent Task"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "borger",
+          "title": "Borger",
+          "icon": "media/borger-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "borger": [
+        {
+          "id": "borger.agentView",
+          "name": "Agent",
+          "type": "webview"
+        },
+        {
+          "id": "borger.tasksView",
+          "name": "Tasks"
+        },
+        {
+          "id": "borger.changesView",
+          "name": "Changes"
+        },
+        {
+          "id": "borger.memoryView",
+          "name": "Memory"
+        },
+        {
+          "id": "borger.settingsView",
+          "name": "Settings"
+        }
+      ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "borger.askAboutFile",
+          "when": "editorTextFocus",
+          "group": "borger@1"
+        },
+        {
+          "command": "borger.explainSelection",
+          "when": "editorHasSelection",
+          "group": "borger@2"
+        },
+        {
+          "command": "borger.fixSelection",
+          "when": "editorHasSelection",
+          "group": "borger@3"
+        },
+        {
+          "command": "borger.generateTests",
+          "when": "editorHasSelection",
+          "group": "borger@4"
+        },
+        {
+          "command": "borger.refactorSelection",
+          "when": "editorHasSelection",
+          "group": "borger@5"
+        }
+      ]
+    }
+  }
+}

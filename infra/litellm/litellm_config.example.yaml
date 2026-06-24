@@ -1,0 +1,9 @@
+model_list:
+  - model_name: qwen3-coder-next-abliterated-h200
+    litellm_params:
+      model: openai/huihui-ai/Huihui-Qwen3-Coder-Next-abliterated
+      api_base: https://YOUR_MODAL_ENDPOINT.modal.run/v1
+      api_key: dummy-key
+
+general_settings:
+  master_key: "sk-private-local-key"
