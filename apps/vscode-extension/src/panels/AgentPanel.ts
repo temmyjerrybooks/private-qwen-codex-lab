@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
+import { ProviderRouter } from "../providers/providerRouter";
 import { inspectWorkspace } from "../tools/workspace";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
@@ -30,6 +31,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     });
 
     this.postState("Ready");
+    void this.postProviderStatus();
   }
 
   async focus(): Promise<void> {
@@ -49,10 +51,17 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: "plan", plan });
   }
 
+  async postProviderStatus(): Promise<void> {
+    const router = new ProviderRouter(this.context);
+    const reports = await router.getStatusReports();
+    this.view?.webview.postMessage({ type: "providerStatus", reports });
+  }
+
   private async handleMessage(message: WebviewMessage): Promise<void> {
     if (message.type === "inspectWorkspace") {
       const summary = await inspectWorkspace();
       this.postState("Workspace inspected", summary);
+      await this.postProviderStatus();
       return;
     }
 
@@ -60,6 +69,12 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       this.postState("Planning...");
       const result = await planTask(message.task, this.context);
       this.postPlan(result);
+      await this.postProviderStatus();
+      return;
+    }
+
+    if (message.type === "refreshProviderStatus") {
+      await this.postProviderStatus();
       return;
     }
 
@@ -92,6 +107,16 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     <section class="meta">
       <span>Mode: <strong>${config.mode}</strong></span>
       <span>Model: <strong>${config.model}</strong></span>
+    </section>
+
+    <section class="provider-box">
+      <div class="section-title">
+        <h2>Provider</h2>
+        <button id="providerRefreshButton">Refresh</button>
+      </div>
+      <dl id="providerStatus" class="provider-status">
+        <div><dt>Active</dt><dd>Checking...</dd></div>
+      </dl>
     </section>
 
     <section class="task-box">

@@ -1,1 +1,2 @@
-# Phase 2 will define Modal/SGLang/vLLM dependencies.
+modal>=1.1.0
+huggingface_hub[hf_transfer]>=0.33.0

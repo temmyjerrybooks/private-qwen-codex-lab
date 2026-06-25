@@ -15,7 +15,12 @@
     "onCommand:borger.openAgent",
     "onCommand:borger.inspectWorkspace",
     "onCommand:borger.testModelConnection",
-    "onCommand:borger.planTask"
+    "onCommand:borger.planTask",
+    "onCommand:borger.manageProviders",
+    "onCommand:borger.checkProviderBudgets",
+    "onCommand:borger.switchProvider",
+    "onCommand:borger.showProviderStatus",
+    "onCommand:borger.resetProviderState"
   ],
   "main": "./dist/extension.js",
   "scripts": {
@@ -86,6 +91,85 @@
           "type": "boolean",
           "default": true,
           "description": "Require confirmation before running terminal commands."
+        },
+        "borger.providerRoutingEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable budget-aware routing across authorized providers."
+        },
+        "borger.providerRoutingMode": {
+          "type": "string",
+          "default": "budget_aware",
+          "enum": [
+            "budget_aware"
+          ],
+          "description": "Provider routing mode."
+        },
+        "borger.defaultProviderId": {
+          "type": "string",
+          "default": "",
+          "description": "Optional preferred provider ID for manual switching."
+        },
+        "borger.providerWarnPercent": {
+          "type": "number",
+          "default": 90,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Default provider budget warning threshold."
+        },
+        "borger.providerStopPercent": {
+          "type": "number",
+          "default": 95,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Default provider budget stop threshold."
+        },
+        "borger.providerStopAction": {
+          "type": "string",
+          "default": "soft_stop",
+          "enum": [
+            "soft_stop",
+            "hard_stop"
+          ],
+          "description": "Action to take when a provider reaches the stop threshold."
+        },
+        "borger.providerAutoSwitch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically switch to another authorized provider when one is paused."
+        },
+        "borger.providerResetDay": {
+          "type": "number",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 28,
+          "description": "Default monthly reset day for provider budgets."
+        },
+        "borger.providerMonthlyResetEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reset provider state when the monthly reset date passes."
+        },
+        "borger.providerLazyActivation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Do not warm or test providers automatically after monthly reset."
+        },
+        "borger.providerAutoWarmOnReset": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reserved for future use. Keep false to avoid consuming Modal credit after reset."
+        },
+        "borger.providerLedgerEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Track local estimated provider usage in .borger/usage-ledger.jsonl."
+        },
+        "borger.modalH200PairHourlyCostUsd": {
+          "type": "number",
+          "default": 9.08,
+          "minimum": 0,
+          "description": "Estimated hourly cost for one Modal H200:2 provider."
         }
       }
     },
@@ -129,6 +213,26 @@
       {
         "command": "borger.runAgentTask",
         "title": "Borger: Run Agent Task"
+      },
+      {
+        "command": "borger.manageProviders",
+        "title": "Borger: Manage Providers"
+      },
+      {
+        "command": "borger.checkProviderBudgets",
+        "title": "Borger: Check Provider Budgets"
+      },
+      {
+        "command": "borger.switchProvider",
+        "title": "Borger: Switch Provider"
+      },
+      {
+        "command": "borger.showProviderStatus",
+        "title": "Borger: Show Provider Status"
+      },
+      {
+        "command": "borger.resetProviderState",
+        "title": "Borger: Reset Provider State"
       }
     ],
     "viewsContainers": {

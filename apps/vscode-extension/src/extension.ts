@@ -3,11 +3,16 @@ import { registerAskAboutFileCommand } from "./commands/askAboutFile";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
 import { registerFixSelectionCommand } from "./commands/fixSelection";
 import { registerGenerateTestsCommand } from "./commands/generateTests";
+import { registerCheckProviderBudgetsCommand } from "./commands/checkProviderBudgets";
 import { registerInspectWorkspaceCommand } from "./commands/inspectWorkspace";
+import { registerManageProvidersCommand } from "./commands/manageProviders";
 import { registerOpenAgentCommand } from "./commands/openAgent";
 import { registerPlanTaskCommand } from "./commands/planTask";
 import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
+import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
+import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
+import { registerSwitchProviderCommand } from "./commands/switchProvider";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
 import { AgentPanel } from "./panels/AgentPanel";
 import { SidebarTreeProvider } from "./panels/SidebarTreeProvider";
@@ -36,7 +41,12 @@ export function activate(context: vscode.ExtensionContext): void {
     registerFixSelectionCommand(),
     registerGenerateTestsCommand(),
     registerRefactorSelectionCommand(),
-    registerRunAgentTaskCommand()
+    registerRunAgentTaskCommand(),
+    registerManageProvidersCommand(context),
+    registerCheckProviderBudgetsCommand(context, output),
+    registerSwitchProviderCommand(context),
+    registerShowProviderStatusCommand(context, output),
+    registerResetProviderStateCommand(context)
   );
 
   output.appendLine("Borger extension activated.");

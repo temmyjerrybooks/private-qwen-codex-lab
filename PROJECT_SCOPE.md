@@ -833,6 +833,254 @@ These rules are for developer control and project reliability.
 
 ---
 
+## 16A. Robust Authorized Engineering Agent Requirement
+
+Borger must become a robust authorized engineering agent, not just a chat assistant.
+
+The target workflow is a serious VS Code coding agent similar to Codex, Claude Code, Cursor Agent, and other agentic developer tools. Borger must eventually support full authorized engineering workflows inside VS Code when explicitly enabled by the user.
+
+This remains a private personal/group-use system. Do not build public account sharing, public signup, billing, marketplace behavior, or public user management.
+
+### 16A.1 Workspace Access
+
+When permitted, Borger must be able to:
+
+* inspect project folders
+* read files
+* search the codebase
+* understand project structure
+* read current file and selected text
+* read VS Code diagnostics
+* read package/dependency files
+* detect frameworks and build tools
+
+### 16A.2 Code Editing
+
+When permitted, Borger must be able to:
+
+* create new files
+* modify existing files
+* rename files
+* delete files only when authorized
+* generate patches
+* show diffs before applying
+* apply selected diffs
+* reject diffs
+* restore previous file content where possible
+* keep a summary of changed files
+
+### 16A.3 Terminal Execution
+
+When permitted, Borger must be able to:
+
+* run terminal commands from VS Code
+* run build commands
+* run test commands
+* run lint/type-check commands
+* run install commands
+* run project scripts
+* capture terminal output where practical
+* feed command errors back into the agent
+* repeat fix loops until success or max iterations
+
+### 16A.4 Git and GitHub Workflow
+
+When permitted, Borger must be able to:
+
+* inspect git status
+* inspect git diff
+* create branches
+* stage files
+* generate commit messages
+* commit changes after authorization
+* push to GitHub after authorization
+* create PR descriptions
+* optionally use GitHub CLI if installed
+* never hardcode GitHub tokens
+* store credentials securely through system or VS Code mechanisms
+
+### 16A.5 SSH and Remote Server Workflow
+
+When explicitly enabled, Borger must be able to support remote workflows while remaining conservative:
+
+* support SSH only when explicitly enabled
+* run SSH commands only against allowed hosts
+* use existing user SSH configuration where possible
+* never store private SSH keys in the repo
+* support remote deploy commands when authorized
+* summarize all remote commands before and after execution
+* block or require confirmation for destructive remote commands
+
+### 16A.6 Deployment Workflow
+
+When permitted, Borger must be able to:
+
+* run deploy-related commands when authorized
+* support Modal deploy/test commands
+* support Vercel, Netlify, Fly.io, Railway, and Docker commands when present in the project
+* read deployment logs where possible
+* fix deployment errors
+* update deployment docs
+
+### 16A.7 Auto Engineer Mode
+
+Auto Mode should eventually perform this loop:
+
+* understand task
+* inspect workspace
+* create plan
+* identify files
+* propose edits
+* apply approved edits, or auto-apply if trusted mode is enabled
+* run verification commands
+* read errors
+* fix errors
+* repeat until success or max loop limit
+* summarize changes
+* optionally commit and push if allowed
+
+### 16A.8 Authorization System
+
+Borger must have a local capability permission system.
+
+Supported permission profiles:
+
+* `read_only`
+* `plan_only`
+* `edit_with_review`
+* `trusted_workspace`
+* `full_auto`
+* `remote_ops`
+
+Default profile:
+
+```text
+edit_with_review
+```
+
+#### read_only
+
+* can inspect files
+* can explain code
+* cannot edit files
+* cannot run terminal commands
+* cannot use git write operations
+* cannot use SSH
+
+#### plan_only
+
+* can inspect workspace
+* can create plans
+* cannot edit files
+* cannot run terminal commands
+
+#### edit_with_review
+
+* can propose diffs
+* can apply edits after user approval
+* can run safe read-only commands
+* asks before terminal commands
+
+#### trusted_workspace
+
+* can edit workspace files
+* can run configured safe commands
+* can run build/test/lint
+* asks before destructive commands
+* asks before git push, deploy, or SSH
+
+#### full_auto
+
+* can plan, edit, run tests, fix errors, and summarize
+* can use git commit if enabled
+* still must block or require confirmation for destructive commands unless explicitly allowed
+
+#### remote_ops
+
+* can use SSH and remote deployment commands only for configured allowed hosts
+* must log all remote actions
+* must never store private keys in repo
+
+### 16A.9 Permission Configuration
+
+Add support for these configuration values:
+
+```text
+BORGER_PERMISSION_PROFILE=edit_with_review
+BORGER_CAN_READ_WORKSPACE=true
+BORGER_CAN_WRITE_WORKSPACE=true
+BORGER_CAN_RUN_TERMINAL=true
+BORGER_CAN_USE_GIT=true
+BORGER_CAN_PUSH_GITHUB=false
+BORGER_CAN_USE_SSH=false
+BORGER_CAN_DEPLOY=false
+BORGER_CAN_RUN_DESTRUCTIVE_COMMANDS=false
+BORGER_REQUIRE_CONFIRMATION_FOR_DESTRUCTIVE=true
+BORGER_REQUIRE_CONFIRMATION_FOR_GIT_PUSH=true
+BORGER_REQUIRE_CONFIRMATION_FOR_SSH=true
+BORGER_MAX_AUTO_FIX_LOOPS=5
+```
+
+Create local ignored config:
+
+```text
+.borger/permissions.local.json
+```
+
+Example:
+
+```json
+{
+  "profile": "trusted_workspace",
+  "capabilities": {
+    "canReadWorkspace": true,
+    "canWriteWorkspace": true,
+    "canRunTerminal": true,
+    "canUseGit": true,
+    "canPushGitHub": true,
+    "canUseSSH": false,
+    "canDeploy": true,
+    "canRunDestructiveCommands": false
+  },
+  "allowedCommands": [
+    "npm",
+    "pnpm",
+    "yarn",
+    "node",
+    "python",
+    "pip",
+    "git",
+    "gh",
+    "modal",
+    "docker"
+  ],
+  "blockedCommandPatterns": [
+    "rm -rf",
+    "git reset --hard",
+    "git push --force",
+    "format",
+    "shutdown",
+    "del /s"
+  ],
+  "allowedSshHosts": []
+}
+```
+
+### 16A.10 Security and Reliability Rules
+
+Borger must:
+
+* not commit local permission files
+* not commit tokens, SSH keys, Modal keys, GitHub tokens, or `.env` secrets
+* require confirmation for destructive commands unless explicitly disabled
+* block commands outside the workspace unless the user enables `remote_ops`
+* keep an action log for edits, commands, git operations, and SSH operations
+* show final summary of all files changed and commands run
+* stop auto loops after `BORGER_MAX_AUTO_FIX_LOOPS`
+* stop and explain the issue if command execution fails repeatedly
+
+---
+
 ## 17. Phase-by-Phase Execution Plan for Codex
 
 Codex must execute this project phase by phase.
@@ -918,6 +1166,35 @@ Create a robust Modal deployment for the 80B abliterated coding model.
 * `/v1/models` test works if supported
 * `/v1/chat/completions` smoke test works
 * Docs explain setup and deployment
+
+---
+
+# Phase 2.7 — Capability and Authorization System
+
+## Goal
+
+Create Borger's local capability permission system so later edit, terminal, git, deployment, SSH, and auto workflows can be authorized safely.
+
+## Build
+
+* permission profile loader
+* local ignored permissions config
+* command allowlist/blocklist
+* action authorization checker
+* action logger
+* VS Code settings for permissions
+* `Borger: Show Permissions` command
+* `Borger: Update Permission Profile` command
+
+## Acceptance Criteria
+
+* Borger can load permission profile.
+* Borger can show current permissions.
+* Borger can check whether an action is allowed.
+* Borger blocks unauthorized edits, terminal commands, git operations, and SSH actions.
+* Borger logs allowed actions.
+* Borger can be configured for trusted personal use.
+* Secrets and local permission configs are ignored by git.
 
 ---
 
@@ -1057,8 +1334,11 @@ Allow Borger to run project commands inside VS Code.
 * terminal command runner
 * command approval UI
 * output capture strategy
+* output capture/logging
 * command history
+* safe command detection using the capability system
 * output summarization
+* error feedback to model
 
 ## Acceptance Criteria
 
@@ -1067,6 +1347,8 @@ Allow Borger to run project commands inside VS Code.
 * Borger can run commands in VS Code terminal
 * Borger can capture or display command output
 * Borger can include command output in the next model call
+* Borger blocks terminal commands not allowed by the current permission profile
+* Borger logs terminal actions
 
 ---
 
@@ -1125,19 +1407,23 @@ Make Borger perform full agentic task execution.
 
 ---
 
-# Phase 11 — Git Workflow
+# Phase 11 — GitHub Workflow
 
 ## Goal
 
-Help the user finalize work.
+Help the user finalize work through local git and authorized GitHub workflows.
 
 ## Build
 
 * git diff summary
+* git status/diff
+* branch creation
 * commit message generator
 * optional branch helper
 * optional commit command
+* push after authorization
 * PR description generator
+* optional GitHub CLI integration
 
 ## Acceptance Criteria
 
@@ -1146,10 +1432,39 @@ Help the user finalize work.
 * Borger can propose branch name
 * Borger can generate PR description
 * Borger asks before running git write commands
+* Borger asks before pushing to GitHub
+* Borger never hardcodes GitHub tokens
+* Borger uses system or VS Code credential mechanisms where possible
 
 ---
 
-# Phase 12 — Memory and Project Notes
+# Phase 12 — SSH and Remote Ops
+
+## Goal
+
+Allow Borger to run SSH and remote deployment workflows only when explicitly enabled and authorized.
+
+## Build
+
+* SSH host allowlist
+* remote command runner
+* remote deployment helper
+* remote output logging
+* strict authorization checks
+
+## Acceptance Criteria
+
+* Borger can load allowed SSH hosts from local ignored config.
+* Borger blocks SSH when `remote_ops` or explicit SSH permission is not enabled.
+* Borger only runs SSH commands against allowed hosts.
+* Borger uses existing user SSH configuration where possible.
+* Borger never stores private SSH keys in the repo.
+* Borger logs all remote actions.
+* Borger requires confirmation for destructive remote commands.
+
+---
+
+# Phase 12B — Memory and Project Notes
 
 ## Goal
 
@@ -1318,6 +1633,21 @@ BORGER_MAX_CONTEXT_FILES=80
 BORGER_MAX_FILE_SIZE_KB=300
 BORGER_CONFIRM_BEFORE_APPLY=true
 BORGER_CONFIRM_BEFORE_TERMINAL=true
+
+# Capability permissions
+BORGER_PERMISSION_PROFILE=edit_with_review
+BORGER_CAN_READ_WORKSPACE=true
+BORGER_CAN_WRITE_WORKSPACE=true
+BORGER_CAN_RUN_TERMINAL=true
+BORGER_CAN_USE_GIT=true
+BORGER_CAN_PUSH_GITHUB=false
+BORGER_CAN_USE_SSH=false
+BORGER_CAN_DEPLOY=false
+BORGER_CAN_RUN_DESTRUCTIVE_COMMANDS=false
+BORGER_REQUIRE_CONFIRMATION_FOR_DESTRUCTIVE=true
+BORGER_REQUIRE_CONFIRMATION_FOR_GIT_PUSH=true
+BORGER_REQUIRE_CONFIRMATION_FOR_SSH=true
+BORGER_MAX_AUTO_FIX_LOOPS=5
 
 # Modal/Hugging Face
 HF_TOKEN=replace_with_huggingface_token

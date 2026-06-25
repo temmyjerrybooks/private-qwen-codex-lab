@@ -1,9 +1,14 @@
-import { BorgerConfig } from "../config";
 import { ChatCompletionResponse, ChatMessage } from "./types";
+
+export interface OpenAICompatibleEndpoint {
+  baseUrl: string;
+  model: string;
+  label?: string;
+}
 
 export class LiteLLMClient {
   constructor(
-    private readonly config: BorgerConfig,
+    private readonly endpoint: OpenAICompatibleEndpoint,
     private readonly apiKey?: string
   ) {}
 
@@ -15,7 +20,7 @@ export class LiteLLMClient {
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
-    const url = `${this.config.litellmBaseUrl.replace(/\/$/, "")}/chat/completions`;
+    const url = `${this.endpoint.baseUrl.replace(/\/$/, "")}/chat/completions`;
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -23,7 +28,7 @@ export class LiteLLMClient {
         ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {})
       },
       body: JSON.stringify({
-        model: this.config.model,
+        model: this.endpoint.model,
         messages,
         temperature: 0.2
       })

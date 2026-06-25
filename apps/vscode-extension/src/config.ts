@@ -10,6 +10,21 @@ export interface BorgerConfig {
   maxFileSizeKb: number;
   confirmBeforeApply: boolean;
   confirmBeforeTerminal: boolean;
+  providerRouting: {
+    enabled: boolean;
+    mode: "budget_aware";
+    defaultProviderId: string;
+    warnPercent: number;
+    stopPercent: number;
+    stopAction: "soft_stop" | "hard_stop";
+    autoSwitch: boolean;
+    resetDay: number;
+    monthlyResetEnabled: boolean;
+    lazyActivation: boolean;
+    autoWarmOnReset: boolean;
+    ledgerEnabled: boolean;
+    h200PairHourlyCostUsd: number;
+  };
 }
 
 const secretKey = "borger.litellmApiKey";
@@ -23,7 +38,22 @@ export function getBorgerConfig(): BorgerConfig {
     maxContextFiles: config.get("maxContextFiles", 80),
     maxFileSizeKb: config.get("maxFileSizeKb", 300),
     confirmBeforeApply: config.get("confirmBeforeApply", true),
-    confirmBeforeTerminal: config.get("confirmBeforeTerminal", true)
+    confirmBeforeTerminal: config.get("confirmBeforeTerminal", true),
+    providerRouting: {
+      enabled: config.get("providerRoutingEnabled", true),
+      mode: config.get<"budget_aware">("providerRoutingMode", "budget_aware"),
+      defaultProviderId: config.get("defaultProviderId", ""),
+      warnPercent: config.get("providerWarnPercent", 90),
+      stopPercent: config.get("providerStopPercent", 95),
+      stopAction: config.get<"soft_stop" | "hard_stop">("providerStopAction", "soft_stop"),
+      autoSwitch: config.get("providerAutoSwitch", true),
+      resetDay: config.get("providerResetDay", 1),
+      monthlyResetEnabled: config.get("providerMonthlyResetEnabled", true),
+      lazyActivation: config.get("providerLazyActivation", true),
+      autoWarmOnReset: config.get("providerAutoWarmOnReset", false),
+      ledgerEnabled: config.get("providerLedgerEnabled", true),
+      h200PairHourlyCostUsd: config.get("modalH200PairHourlyCostUsd", 9.08)
+    }
   };
 }
 

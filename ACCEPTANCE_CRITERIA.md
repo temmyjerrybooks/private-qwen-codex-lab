@@ -22,6 +22,36 @@
 - `/v1/chat/completions` smoke test works
 - Docs explain setup and deployment
 
+## Phase 2.5
+
+- Provider config loader exists
+- Provider state manager exists
+- Local usage ledger exists
+- Estimated budget percentage calculation works
+- Exact Modal billing strategy is defensive when unavailable
+- Monthly reset logic exists
+- Lazy activation is enabled by default
+- Budget-paused providers can become eligible after reset
+- Borger does not automatically call or warm providers after reset
+- Borger can show provider status
+- Borger can choose the best available provider
+- Borger can pause a provider at or above the stop threshold
+- Borger can switch to another healthy provider without asking
+- Model calls are blocked when no provider is available
+- Provider credentials are not committed
+- `npm run compile` passes
+- `npm run check-types` passes
+
+## Phase 2.7
+
+- Borger can load permission profile
+- Borger can show current permissions
+- Borger can check whether an action is allowed
+- Borger blocks unauthorized edits, terminal commands, git operations, and SSH actions
+- Borger logs allowed actions
+- Borger can be configured for trusted personal use
+- Secrets and local permission configs are ignored by git
+
 ## Phase 3
 
 - LiteLLM starts locally

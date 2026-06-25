@@ -21,6 +21,28 @@
 - Add HF cache volume
 - Add smoke test script
 
+## Phase 2.5 - Multi-Provider Budget Router
+
+- Add local provider config loading
+- Add provider state tracking
+- Add local usage ledger
+- Add budget-aware provider selection
+- Add monthly reset logic with lazy activation
+- Add provider status and management commands
+- Route model requests through the provider router
+- Document private provider setup and cost behavior
+
+## Phase 2.7 - Capability and Authorization System
+
+- Add permission profile loader
+- Add local ignored permissions config
+- Add command allowlist/blocklist
+- Add action authorization checker
+- Add action logger
+- Add VS Code permission settings
+- Add `Borger: Show Permissions`
+- Add `Borger: Update Permission Profile`
+
 ## Phase 3 - LiteLLM Gateway
 
 - Add LiteLLM config
@@ -36,6 +58,7 @@
 - Phase 8: Terminal execution
 - Phase 9: Fix mode
 - Phase 10: Auto mode
-- Phase 11: Git workflow
-- Phase 12: Memory and project notes
+- Phase 11: GitHub workflow
+- Phase 12: SSH and remote ops
+- Phase 12B: Memory and project notes
 - Phase 13: Polish and packaging

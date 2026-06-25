@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Later phases add model hosting, LiteLLM deployment, richer context gathering, diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Later phases add LiteLLM deployment, richer context gathering, diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes only the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state.
 
 ## Quick Start
 
@@ -48,11 +48,24 @@ API keys are stored in VS Code SecretStorage when supplied through Borger comman
 
 ## Deployment Overview
 
-Model hosting and LiteLLM deployment are planned for later phases. Phase 1 does not start Modal, SGLang, vLLM, Docker, or production infrastructure.
+Model hosting is implemented for Modal/SGLang in Phase 2. LiteLLM deployment is planned for Phase 3.
+
+## Provider Routing
+
+Private provider routing uses an ignored local file:
+
+```text
+.borger/providers.local.json
+```
+
+Each provider can have its own endpoint, model, budget, warning threshold, stop threshold, reset day, and lazy activation setting. API keys must be stored through VS Code SecretStorage using provider-specific secret keys such as `borger.provider.temmy.apiKey`.
+
+Monthly reset is lazy by default: Borger resets local provider state when the reset date arrives, but it does not warm, smoke test, or call any endpoint until the user runs a real task or manually tests the connection.
 
 ## Phase Status
 
 - Phase 1: Repository scaffold and VS Code extension shell - implemented
-- Phase 2: Modal H200:2 SGLang deployment - not started
+- Phase 2: Modal H200:2 SGLang deployment - implemented
+- Phase 2.5: Multi-provider budget router - implemented
 - Phase 3: LiteLLM gateway - not started
 - Phase 4+: Not started

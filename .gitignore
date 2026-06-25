@@ -6,3 +6,9 @@ out/
 .env.local
 *.vsix
 coverage/
+.borger/providers.local.json
+.borger/secrets.local.json
+.borger/usage-ledger.jsonl
+.borger/provider-state.json
+.borger/permissions.local.json
+.borger/action-log.jsonl
