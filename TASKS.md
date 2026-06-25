@@ -69,9 +69,20 @@
 - Show richer context status in the Borger sidebar
 - Document context behavior and troubleshooting
 
+## Phase 5 - Plan Mode Upgrade
+
+- Add relevant-file ranking from workspace context
+- Add task complexity estimate
+- Upgrade Plan Task prompt to require structured Markdown sections
+- Include task understanding, repo observations, implementation steps, files likely to change, verification plan, risks, assumptions, and recommended next action
+- Keep commands as recommendations only
+- Return structured plan metadata to the webview
+- Render complexity, relevant files, verification commands, and plan sections in the sidebar
+- Keep Plan Mode read-only
+- Preserve permission checks, provider routing, budget checks, LiteLLM support, and Phase 4 context
+
 ## Later Phases
 
-- Phase 5: Plan mode upgrade
 - Phase 6: Diff and patch preview
 - Phase 7: Edit mode
 - Phase 8: Terminal execution

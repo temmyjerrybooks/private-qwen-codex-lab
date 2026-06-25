@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { planTask } from "../agent/planner";
+import { formatPlanResultForOutput, planTask } from "../agent/planner";
 import { AgentPanel } from "../panels/AgentPanel";
 
 export function registerPlanTaskCommand(
@@ -22,7 +22,7 @@ export function registerPlanTaskCommand(
       await agentPanel.focus();
       const plan = await planTask(task, context);
       output.appendLine("Plan task response:");
-      output.appendLine(plan);
+      output.appendLine(formatPlanResultForOutput(plan));
       agentPanel.postPlan(plan);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

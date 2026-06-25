@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { buildWorkspaceContext } from "../agent/contextBuilder";
-import { planTask } from "../agent/planner";
+import { PlanTaskResult, planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { loadPermissionState } from "../permissions/permissionState";
@@ -50,7 +50,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     });
   }
 
-  postPlan(plan: string): void {
+  postPlan(plan: PlanTaskResult | string): void {
     this.view?.webview.postMessage({ type: "plan", plan });
   }
 
@@ -184,7 +184,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     <section class="output">
       <h2>Plan</h2>
-      <pre id="planOutput">Ask Borger to inspect the workspace or plan a task.</pre>
+      <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
     </section>
   </main>
   <script src="${scriptUri}"></script>

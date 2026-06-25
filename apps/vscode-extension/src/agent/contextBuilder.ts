@@ -28,14 +28,21 @@ export interface ActiveProviderSummary {
   reason?: string;
 }
 
+export interface RelevantFileRanking {
+  path: string;
+  score: number;
+  reasons: string[];
+}
+
 export interface WorkspaceContext extends WorkspaceSummary {
   generatedAt: string;
   permissionProfile: PermissionProfileSummary;
   activeProvider?: ActiveProviderSummary;
   gitStatus: GitStatusSummary;
+  relevantFiles: RelevantFileRanking[];
 }
 
-export async function buildWorkspaceContext(context: vscode.ExtensionContext): Promise<WorkspaceContext> {
+export async function buildWorkspaceContext(context: vscode.ExtensionContext, task?: string): Promise<WorkspaceContext> {
   const [workspace, permissionProfile, activeProvider] = await Promise.all([
     inspectWorkspace(),
     buildPermissionProfileSummary(),
@@ -43,13 +50,17 @@ export async function buildWorkspaceContext(context: vscode.ExtensionContext): P
   ]);
 
   const gitStatus = await buildGitStatusSummary(workspace);
-
-  return {
+  const baseContext = {
     ...workspace,
     generatedAt: new Date().toISOString(),
     permissionProfile,
     activeProvider,
     gitStatus
+  };
+
+  return {
+    ...baseContext,
+    relevantFiles: rankRelevantFiles(baseContext, task)
   };
 }
 
@@ -93,6 +104,11 @@ export function formatWorkspaceContextForOutput(context: WorkspaceContext): stri
     `Active provider: ${provider}`,
     `Current file: ${context.openFile || "none"}`,
     `Selected text: ${context.selectedText ? `${context.selectedText.text.length} characters` : "none"}`,
+    `Relevant files: ${
+      context.relevantFiles.length > 0
+        ? context.relevantFiles.map((file) => `${file.path} (${file.reasons.join("; ")})`).join(", ")
+        : "none ranked"
+    }`,
     `Context status: ${context.contextStatus}`,
     `Ignored behavior: ${context.ignoredBehavior.join(" ")}`,
     `Secrets: ${context.secretsNote}`,
@@ -197,3 +213,133 @@ function rankStatus(status: ProviderStatusReport["state"]["status"]): number {
   }
   return 3;
 }
+
+function rankRelevantFiles(
+  context: Omit<WorkspaceContext, "relevantFiles">,
+  task: string | undefined
+): RelevantFileRanking[] {
+  const scores = new Map<string, { score: number; reasons: string[] }>();
+  const taskTokens = tokenize(task ?? "");
+
+  for (const filePath of context.sampleFiles) {
+    addScore(scores, filePath, 1, "safe workspace sample");
+    const pathTokens = tokenize(filePath);
+    const overlap = countOverlap(taskTokens, pathTokens);
+    if (overlap > 0) {
+      addScore(scores, filePath, overlap * 8, "path matches task wording");
+    }
+    if (isFrameworkOrConfigFile(filePath)) {
+      addScore(scores, filePath, 8, "framework or project config");
+    }
+  }
+
+  for (const file of context.importantFiles) {
+    addScore(scores, file.path, 14, "important project file");
+    const contentTokens = tokenize(`${file.summary} ${file.excerpt ?? ""}`);
+    const overlap = countOverlap(taskTokens, contentTokens);
+    if (overlap > 0) {
+      addScore(scores, file.path, overlap * 4, "important file content matches task");
+    }
+  }
+
+  if (context.openFile) {
+    addScore(scores, context.openFile, 35, "current active editor file");
+  }
+
+  if (context.selectedText?.path) {
+    addScore(scores, context.selectedText.path, 24, "selected text is in this file");
+    const selectionOverlap = countOverlap(taskTokens, tokenize(context.selectedText.text));
+    if (selectionOverlap > 0) {
+      addScore(scores, context.selectedText.path, selectionOverlap * 5, "selection text matches task");
+    }
+  }
+
+  for (const diagnostic of context.diagnostics.items) {
+    addScore(
+      scores,
+      diagnostic.path,
+      diagnostic.severity === "error" ? 18 : 10,
+      `${diagnostic.severity} diagnostic present`
+    );
+  }
+
+  if (context.gitStatus.available) {
+    for (const entry of context.gitStatus.entries) {
+      addScore(scores, entry.path, 12, "recently changed in git status");
+    }
+  }
+
+  for (const [scriptName, command] of Object.entries(context.packageScripts)) {
+    const scriptTokens = tokenize(`${scriptName} ${command}`);
+    if (countOverlap(taskTokens, scriptTokens) > 0) {
+      addScore(scores, "package.json", 9, `package script may be relevant: ${scriptName}`);
+    }
+  }
+
+  return [...scores.entries()]
+    .map(([path, value]) => ({
+      path,
+      score: value.score,
+      reasons: [...new Set(value.reasons)].slice(0, 4)
+    }))
+    .filter((file) => file.score > 1)
+    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
+    .slice(0, 12);
+}
+
+function addScore(scores: Map<string, { score: number; reasons: string[] }>, path: string, score: number, reason: string): void {
+  const current = scores.get(path) ?? { score: 0, reasons: [] };
+  current.score += score;
+  current.reasons.push(reason);
+  scores.set(path, current);
+}
+
+function tokenize(value: string): Set<string> {
+  return new Set(
+    value
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length >= 3 && !commonWords.has(token))
+  );
+}
+
+function countOverlap(left: Set<string>, right: Set<string>): number {
+  let count = 0;
+  for (const token of left) {
+    if (right.has(token)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function isFrameworkOrConfigFile(filePath: string): boolean {
+  return /(^|\/)(package\.json|tsconfig\.json|vite\.config\.[jt]s|next\.config\.[jt]s|tailwind\.config\.[jt]s|pyproject\.toml|requirements\.txt|Dockerfile|docker-compose\.ya?ml)$/i.test(
+    filePath
+  );
+}
+
+const commonWords = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "from",
+  "this",
+  "that",
+  "into",
+  "add",
+  "make",
+  "update",
+  "change",
+  "create",
+  "implement",
+  "fix",
+  "plan",
+  "mode",
+  "file",
+  "files",
+  "task",
+  "code"
+]);

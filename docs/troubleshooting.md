@@ -49,6 +49,14 @@ http://localhost:4000/v1
 - If git status is unavailable, confirm the workspace is a git repository and that the permission profile allows workspace or git inspection.
 - If diagnostics are empty, make sure the relevant VS Code language extension has finished loading.
 
+## Plan Mode Issues
+
+- If Plan Task is blocked, run `Borger: Show Permissions` and confirm `canReadWorkspace` is enabled.
+- If Plan Task reports no provider, run `Borger: Show Provider Status` and check budget thresholds or paused providers.
+- If relevant files look weak, open or select the file related to the task before planning.
+- If the model gives vague output, rerun with a more specific task and inspect the workspace first.
+- If commands appear in the plan, remember they are recommendations only. Phase 5 never runs terminal commands.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

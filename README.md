@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Later phases add diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Later phases add diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering.
 
 ## Quick Start
 
@@ -93,6 +93,20 @@ Phase 4 makes `Borger: Inspect Workspace` and `Borger: Plan Task` repo-aware. Bo
 
 Borger always ignores common heavy folders such as `node_modules`, `.git`, `dist`, `build`, `.next`, `out`, `coverage`, `.turbo`, `.cache`, `.venv`, and `__pycache__`. It avoids reading secret-like files, private keys, tokens, and credential files; `.env.example` is allowed because it is meant to document configuration.
 
+## Plan Mode
+
+Phase 5 makes `Borger: Plan Task` return a structured implementation plan before any editing features exist. Plans include:
+
+- task understanding and repo observations
+- relevant files ranked by likely importance
+- implementation steps
+- exact files likely to change
+- commands likely needed for later verification, without running them
+- verification plan
+- risks, unknowns, assumptions, complexity, and recommended next action
+
+Plan Mode remains read-only. It checks `read_workspace`, builds safe workspace context, selects an eligible provider through the budget router, and sends the plan prompt through LiteLLM. It does not edit files, run commands, push to GitHub, use SSH, or deploy.
+
 ## Permission System
 
 Phase 2.7 adds a local capability system for future edit, terminal, git, GitHub, SSH, deploy, and auto-agent workflows.
@@ -125,4 +139,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 2.7: Capability and authorization system - implemented
 - Phase 3: LiteLLM gateway - implemented
 - Phase 4: Workspace context intelligence - implemented
-- Phase 5+: Not started
+- Phase 5: Plan mode upgrade - implemented
+- Phase 6+: Not started

@@ -53,7 +53,31 @@ Borger collects a read-only context snapshot with:
 
 Workspace scans respect `.gitignore` where practical and always ignore `node_modules`, `.git`, `dist`, `build`, `.next`, `out`, `coverage`, `.turbo`, `.cache`, `.venv`, and `__pycache__`. Borger skips secret-like files, private keys, token files, and credential files. `.env.example` is read because it is intended as safe documentation.
 
-`Borger: Plan Task` checks `read_workspace`, builds the same workspace context, selects an eligible provider through the budget router, and sends the context through LiteLLM. It does not edit files or run terminal commands in Phase 4.
+`Borger: Plan Task` checks `read_workspace`, builds the same workspace context, ranks relevant files, selects an eligible provider through the budget router, and sends the context through LiteLLM. It does not edit files or run terminal commands in Phase 5.
+
+## Plan Mode
+
+Run:
+
+```text
+Borger: Plan Task
+```
+
+Plan Mode returns a structured plan with:
+
+- task understanding
+- repo observations
+- relevant files ranked by likely importance
+- implementation steps
+- files likely to change
+- commands likely needed later, without running them
+- verification plan
+- risks and unknowns
+- assumptions
+- complexity estimate
+- recommended next action
+
+The sidebar renders the plan as sections with a complexity badge and relevant-file list. The output channel also receives the full model plan plus local metadata.
 
 ## Commands
 

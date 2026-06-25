@@ -46,12 +46,14 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
       contextStatusEl.innerHTML = renderContextStatus(message.body);
     }
     if (planOutputEl && message.body) {
+      planOutputEl.classList.remove("empty");
       planOutputEl.textContent = JSON.stringify(message.body, null, 2);
     }
   }
 
   if (message.type === "plan" && planOutputEl) {
-    planOutputEl.textContent = message.plan ?? "";
+    planOutputEl.classList.toggle("empty", !message.plan);
+    planOutputEl.innerHTML = renderPlan(message.plan);
   }
 
   if (message.type === "providerStatus" && providerStatusEl) {
@@ -67,10 +69,35 @@ interface WebviewResponse {
   type: "state" | "plan" | "providerStatus" | "permissionStatus";
   status?: string;
   body?: unknown;
-  plan?: string;
+  plan?: PlanTaskResultMessage | string;
   reports?: ProviderStatusReport[];
   state?: PermissionState;
   error?: string;
+}
+
+interface PlanTaskResultMessage {
+  task: string;
+  title: string;
+  generatedAt: string;
+  workspaceName: string;
+  provider: {
+    id: string;
+    label: string;
+    model: string;
+  };
+  complexity: {
+    level: "low" | "medium" | "high" | "very high";
+    reason: string;
+  };
+  relevantFiles: Array<{
+    path: string;
+    score: number;
+    reasons: string[];
+  }>;
+  suggestedVerificationCommands: string[];
+  commandsLikelyNeeded: string[];
+  editingRequired: boolean;
+  modelPlan: string;
 }
 
 function isWorkspaceContext(value: unknown): value is WorkspaceContextMessage {
@@ -222,6 +249,153 @@ function renderContextStatus(body: unknown): string {
   ];
 
   return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+}
+
+function renderPlan(plan: PlanTaskResultMessage | string | undefined): string {
+  if (!plan) {
+    return '<div class="empty">Ask Borger to inspect the workspace or plan a task.</div>';
+  }
+
+  if (typeof plan === "string") {
+    return `<pre class="plan-markdown">${escapeHtml(plan)}</pre>`;
+  }
+
+  const sections = parsePlanSections(plan.modelPlan);
+  const relevantFiles = plan.relevantFiles.length > 0
+    ? `<ol class="plan-list">${plan.relevantFiles
+        .slice(0, 8)
+        .map((file) => `<li><strong>${escapeHtml(file.path)}</strong><span>${escapeHtml(file.reasons.join("; "))}</span></li>`)
+        .join("")}</ol>`
+    : '<p class="muted">No relevant files ranked.</p>';
+  const verification = plan.suggestedVerificationCommands.length > 0
+    ? `<ul class="plan-list">${plan.suggestedVerificationCommands
+        .map((command) => `<li><code>${escapeHtml(command)}</code></li>`)
+        .join("")}</ul>`
+    : '<p class="muted">No verification commands detected.</p>';
+
+  return `
+    <article class="plan-card">
+      <header class="plan-header">
+        <div>
+          <h3>${escapeHtml(plan.title)}</h3>
+          <p>${escapeHtml(plan.workspaceName)} via ${escapeHtml(plan.provider.label)}</p>
+        </div>
+        <span class="complexity ${plan.complexity.level.replace(" ", "-")}">${escapeHtml(plan.complexity.level)}</span>
+      </header>
+      <dl class="plan-meta">
+        <div><dt>Editing</dt><dd>${plan.editingRequired ? "Likely required later" : "Not required"}</dd></div>
+        <div><dt>Reason</dt><dd>${escapeHtml(plan.complexity.reason)}</dd></div>
+      </dl>
+      <section class="plan-section">
+        <h4>Relevant Files</h4>
+        ${relevantFiles}
+      </section>
+      ${renderNamedSection(sections, "Task Understanding")}
+      ${renderNamedSection(sections, "Repo Observations")}
+      ${renderNamedSection(sections, "Implementation Steps")}
+      ${renderNamedSection(sections, "Files Likely To Change")}
+      <section class="plan-section">
+        <h4>Verification Commands</h4>
+        ${verification}
+      </section>
+      ${renderNamedSection(sections, "Verification Plan")}
+      ${renderNamedSection(sections, "Risks / Unknowns")}
+      ${renderNamedSection(sections, "Assumptions")}
+      ${renderNamedSection(sections, "Recommended Next Action")}
+      <details class="plan-raw">
+        <summary>Full Model Plan</summary>
+        <pre class="plan-markdown">${escapeHtml(plan.modelPlan)}</pre>
+      </details>
+    </article>`;
+}
+
+function parsePlanSections(markdown: string): Map<string, string> {
+  const sections = new Map<string, string>();
+  const lines = markdown.split(/\r?\n/);
+  let current = "Summary";
+  let buffer: string[] = [];
+
+  for (const line of lines) {
+    const heading = line.match(/^##\s+(.+?)\s*$/);
+    if (heading) {
+      if (buffer.join("\n").trim()) {
+        sections.set(current, buffer.join("\n").trim());
+      }
+      current = heading[1].trim();
+      buffer = [];
+    } else if (!/^#\s+Plan:/i.test(line)) {
+      buffer.push(line);
+    }
+  }
+
+  if (buffer.join("\n").trim()) {
+    sections.set(current, buffer.join("\n").trim());
+  }
+  return sections;
+}
+
+function renderNamedSection(sections: Map<string, string>, name: string): string {
+  const content = findSection(sections, name);
+  if (!content) {
+    return "";
+  }
+  return `
+    <section class="plan-section">
+      <h4>${escapeHtml(name)}</h4>
+      <div class="plan-copy">${renderPlanMarkdownFragment(content)}</div>
+    </section>`;
+}
+
+function findSection(sections: Map<string, string>, target: string): string | undefined {
+  const normalizedTarget = normalizeSectionName(target);
+  for (const [name, content] of sections) {
+    if (normalizeSectionName(name) === normalizedTarget) {
+      return content;
+    }
+  }
+  return undefined;
+}
+
+function normalizeSectionName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function renderPlanMarkdownFragment(markdown: string): string {
+  const lines = markdown.split(/\r?\n/);
+  const html: string[] = [];
+  let listOpen = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const bullet = trimmed.match(/^([-*]|\d+\.)\s+(.+)$/);
+    if (bullet) {
+      if (!listOpen) {
+        html.push("<ul>");
+        listOpen = true;
+      }
+      html.push(`<li>${escapeInlineMarkdown(bullet[2])}</li>`);
+      continue;
+    }
+
+    if (listOpen) {
+      html.push("</ul>");
+      listOpen = false;
+    }
+
+    if (!trimmed) {
+      continue;
+    }
+    html.push(`<p>${escapeInlineMarkdown(trimmed)}</p>`);
+  }
+
+  if (listOpen) {
+    html.push("</ul>");
+  }
+  return html.join("");
+}
+
+function escapeInlineMarkdown(value: string): string {
+  return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
 function escapeHtml(value: string): string {

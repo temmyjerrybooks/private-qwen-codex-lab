@@ -91,4 +91,26 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 5
+
+- `Borger: Plan Task` returns a structured professional plan
+- Plan output includes task understanding and repo observations
+- Plan output includes relevant files ranked by likely importance
+- Plan output includes implementation steps
+- Plan output includes files likely to change
+- Plan output includes commands likely needed, without running them
+- Plan output includes verification plan
+- Plan output includes risks, unknowns, assumptions, complexity, and recommended next action
+- Plan Mode remains read-only
+- No file edits are made
+- No terminal commands are run
+- Permission checks remain active
+- Provider routing remains active
+- Budget checks remain active
+- LiteLLM support remains active
+- Workspace context from Phase 4 is used
+- Sidebar renders plan sections, relevant files, verification commands, and complexity
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.
