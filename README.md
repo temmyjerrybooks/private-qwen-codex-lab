@@ -2,20 +2,20 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Later phases add LiteLLM deployment, richer context gathering, diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Later phases add richer context gathering, diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
 ```text
 VS Code Extension
   -> Borger Agent Core
-  -> Workspace Tools
+  -> Provider Router
   -> LiteLLM Gateway
   -> Modal H200:2 Endpoint
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples.
 
 ## Quick Start
 
@@ -48,7 +48,23 @@ API keys are stored in VS Code SecretStorage when supplied through Borger comman
 
 ## Deployment Overview
 
-Model hosting is implemented for Modal/SGLang in Phase 2. LiteLLM deployment is planned for Phase 3.
+Model hosting is implemented for Modal/SGLang in Phase 2. LiteLLM runs locally in Phase 3 and forwards Borger's model alias to the Modal OpenAI-compatible endpoint.
+
+```powershell
+$env:LITELLM_MASTER_KEY="sk-private-local-key"
+$env:BORGER_MODAL_API_BASE="https://YOUR_MODAL_ENDPOINT.modal.run/v1"
+$env:BORGER_MODAL_API_KEY="dummy-key"
+docker compose -f infra/docker/docker-compose.litellm.yml up
+```
+
+Smoke test:
+
+```powershell
+$env:BORGER_LITELLM_BASE_URL="http://localhost:4000/v1"
+$env:BORGER_LITELLM_API_KEY="sk-private-local-key"
+$env:BORGER_MODEL="qwen3-coder-next-abliterated-h200"
+python scripts/smoke_test_litellm.py
+```
 
 ## Provider Routing
 
@@ -58,7 +74,7 @@ Private provider routing uses an ignored local file:
 .borger/providers.local.json
 ```
 
-Each provider can have its own endpoint, model, budget, warning threshold, stop threshold, reset day, and lazy activation setting. API keys must be stored through VS Code SecretStorage using provider-specific secret keys such as `borger.provider.temmy.apiKey`.
+Each provider can have its own endpoint, model, budget, warning threshold, stop threshold, reset day, and lazy activation setting. For local LiteLLM, use `baseUrl` `http://localhost:4000/v1` and model `qwen3-coder-next-abliterated-h200`. API keys must be stored through VS Code SecretStorage using provider-specific secret keys such as `borger.provider.local-litellm.apiKey`.
 
 Monthly reset is lazy by default: Borger resets local provider state when the reset date arrives, but it does not warm, smoke test, or call any endpoint until the user runs a real task or manually tests the connection.
 
@@ -92,5 +108,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 2: Modal H200:2 SGLang deployment - implemented
 - Phase 2.5: Multi-provider budget router - implemented
 - Phase 2.7: Capability and authorization system - implemented
-- Phase 3: LiteLLM gateway - not started
+- Phase 3: LiteLLM gateway - implemented
 - Phase 4+: Not started

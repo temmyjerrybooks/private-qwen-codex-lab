@@ -63,5 +63,12 @@
 - Model alias `qwen3-coder-next-abliterated-h200` works
 - Smoke test sends chat request through LiteLLM to Modal
 - Borger extension can test connection through LiteLLM
+- Docker Compose runs LiteLLM on port 4000
+- LiteLLM config uses environment variables for keys and upstream URL
+- Provider examples use `http://localhost:4000/v1`
+- Provider budget routing remains active
+- Permission checks remain active before workspace-aware planning
+- `npm run compile` passes
+- `npm run check-types` passes
 
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

@@ -25,6 +25,8 @@ Set these values in VS Code settings:
 
 API keys are stored through VS Code SecretStorage when prompted by `Borger: Test Model Connection`.
 
+For Phase 3, `borger.litellmBaseUrl` should point at the local LiteLLM gateway, not directly at Modal. LiteLLM then forwards the alias to the Modal SGLang endpoint.
+
 ## Sidebar
 
 Open the Borger activity bar item. The Phase 1 sidebar supports workspace inspection and plan requests. Tasks, Changes, Memory, and Settings sections exist as placeholders for later phases.
@@ -45,7 +47,11 @@ Open the Borger activity bar item. The Phase 1 sidebar supports workspace inspec
 
 ## Provider Routing
 
-Phase 2.5 routes model calls through a local provider pool before calling any OpenAI-compatible endpoint.
+Phase 2.5 routes model calls through a local provider pool before calling any OpenAI-compatible endpoint. In Phase 3, that endpoint is usually LiteLLM:
+
+```text
+http://localhost:4000/v1
+```
 
 Run:
 
@@ -54,6 +60,34 @@ Borger: Manage Providers
 ```
 
 This opens `.borger/providers.local.json`, which is ignored by git.
+
+Example LiteLLM provider:
+
+```json
+{
+  "providers": [
+    {
+      "id": "local-litellm",
+      "label": "Local LiteLLM Gateway",
+      "owner": "Local",
+      "baseUrl": "http://localhost:4000/v1",
+      "model": "qwen3-coder-next-abliterated-h200",
+      "monthlyBudgetUsd": 30,
+      "warnPercent": 90,
+      "stopPercent": 95,
+      "enabled": true,
+      "autoSwitchFrom": true,
+      "allowSoftStop": true,
+      "allowHardStop": false,
+      "resetDay": 1,
+      "monthlyResetEnabled": true,
+      "lazyActivation": true,
+      "autoWarmOnReset": false,
+      "apiKeySecret": "borger.provider.local-litellm.apiKey"
+    }
+  ]
+}
+```
 
 Provider API keys should be stored in VS Code SecretStorage. Use provider-specific secret keys such as:
 
@@ -68,6 +102,8 @@ Before `Borger: Test Model Connection` or `Borger: Plan Task`, Borger:
 3. calculates estimated budget usage
 4. pauses providers at or above the stop threshold
 5. picks the best eligible provider automatically
+
+`Plan Task` also checks the current permission profile before reading workspace context.
 
 If every provider is paused, failed, disabled, or over budget, the model call is blocked with a clear error.
 

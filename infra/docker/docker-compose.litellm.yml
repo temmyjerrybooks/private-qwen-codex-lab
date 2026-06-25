@@ -1,8 +1,15 @@
 services:
   litellm:
-    image: ghcr.io/berriai/litellm:main-latest
+    image: docker.litellm.ai/berriai/litellm:main-latest
     ports:
       - "4000:4000"
+    environment:
+      # Local private key for the LiteLLM proxy. Override in your shell.
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-sk-private-local-key}"
+      # Replace this with the Modal endpoint printed by `modal deploy`, including /v1.
+      BORGER_MODAL_API_BASE: "${BORGER_MODAL_API_BASE:-https://YOUR_MODAL_ENDPOINT.modal.run/v1}"
+      # Leave as a harmless placeholder if the Modal endpoint does not require auth.
+      BORGER_MODAL_API_KEY: "${BORGER_MODAL_API_KEY:-dummy-key}"
     volumes:
       - ../litellm/litellm_config.example.yaml:/app/config.yaml:ro
-    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    command: ["--config", "/app/config.yaml", "--host", "0.0.0.0", "--port", "4000"]

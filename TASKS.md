@@ -50,6 +50,10 @@
 - Add LiteLLM config
 - Add Docker Compose setup
 - Add LiteLLM smoke test
+- Document Modal-to-LiteLLM wiring
+- Document Borger provider config for LiteLLM
+- Keep provider budget routing active for model calls
+- Keep permission checks active for workspace-aware planning
 
 ## Later Phases
 

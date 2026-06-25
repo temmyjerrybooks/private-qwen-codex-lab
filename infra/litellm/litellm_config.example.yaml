@@ -1,9 +1,30 @@
+# Example LiteLLM proxy config for Borger Phase 3.
+#
+# Copy your Modal SGLang endpoint into BORGER_MODAL_API_BASE, including /v1:
+#
+#   BORGER_MODAL_API_BASE=https://YOUR_MODAL_ENDPOINT.modal.run/v1
+#
+# Keep keys in environment variables. Do not paste real secrets into this file.
 model_list:
   - model_name: qwen3-coder-next-abliterated-h200
     litellm_params:
+      # LiteLLM uses the openai/ prefix for OpenAI-compatible upstream servers.
       model: openai/huihui-ai/Huihui-Qwen3-Coder-Next-abliterated
-      api_base: https://YOUR_MODAL_ENDPOINT.modal.run/v1
-      api_key: dummy-key
+      # Modal exposes SGLang's OpenAI-compatible API at the deployed /v1 URL.
+      api_base: os.environ/BORGER_MODAL_API_BASE
+      # Optional today, but kept for private Modal/proxy endpoints that require auth.
+      api_key: os.environ/BORGER_MODAL_API_KEY
+      # H200 cold starts and first requests can be slow while the model warms.
+      timeout: 600
+
+litellm_settings:
+  # Drop unsupported OpenAI parameters before forwarding to the SGLang endpoint.
+  drop_params: true
+  # Allow long first responses during cold start or SGLang initialization.
+  request_timeout: 600
+  # Keep retries conservative so failed local tests return useful errors quickly.
+  num_retries: 1
 
 general_settings:
-  master_key: "sk-private-local-key"
+  # The local LiteLLM proxy key. Set LITELLM_MASTER_KEY before starting Docker.
+  master_key: os.environ/LITELLM_MASTER_KEY

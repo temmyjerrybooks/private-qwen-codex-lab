@@ -13,9 +13,24 @@
 
 ## LiteLLM Connection Failures
 
-- Confirm LiteLLM is running at the configured base URL
-- Confirm the API key is stored correctly
-- Confirm the model alias matches `qwen3-coder-next-abliterated-h200`
+- Confirm LiteLLM is running:
+
+```powershell
+docker compose -f infra/docker/docker-compose.litellm.yml up
+```
+
+- Confirm Borger and smoke tests use the local base URL:
+
+```text
+http://localhost:4000/v1
+```
+
+- Confirm `BORGER_LITELLM_API_KEY` matches `LITELLM_MASTER_KEY`.
+- Confirm the model alias matches `qwen3-coder-next-abliterated-h200`.
+- If `/v1/models` works but chat fails, check `BORGER_MODAL_API_BASE`.
+- If you see 401 or 403, the LiteLLM master key is probably wrong.
+- If you see 404, check the model alias and `/v1` suffix.
+- If you see 502, 503, or 504, the Modal endpoint may be sleeping or SGLang may still be loading.
 
 ## Permission Issues
 
@@ -27,4 +42,8 @@
 
 ## Modal and Hugging Face Issues
 
-Modal auth, Hugging Face tokens, slow downloads, and GPU memory issues are addressed in later deployment phases.
+- Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.
+- Slow first request: the H200 app may be cold-starting, downloading weights, or reading the cache volume.
+- GPU memory errors: confirm the Modal deployment uses `gpu="H200:2"` and tensor parallelism size 2.
+- Endpoint failures: test Modal directly with `python scripts/smoke_test_modal_endpoint.py`, then test LiteLLM with `python scripts/smoke_test_litellm.py`.
+- Hugging Face errors: confirm Modal secret `huggingface-secret` contains `HF_TOKEN`.

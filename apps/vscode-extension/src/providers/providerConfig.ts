@@ -32,11 +32,11 @@ export async function createProviderConfigTemplateIfMissing(): Promise<vscode.Ur
   const template: ProvidersLocalFile = {
     providers: [
       {
-        id: "temmy",
-        label: "Temmy Modal",
-        owner: "Temmy",
-        baseUrl: "https://example.modal.run/v1",
-        model: "huihui-ai/Huihui-Qwen3-Coder-Next-abliterated",
+        id: "local-litellm",
+        label: "Local LiteLLM Gateway",
+        owner: "Local",
+        baseUrl: "http://localhost:4000/v1",
+        model: "qwen3-coder-next-abliterated-h200",
         monthlyBudgetUsd: 30,
         warnPercent: 90,
         stopPercent: 95,
@@ -48,7 +48,7 @@ export async function createProviderConfigTemplateIfMissing(): Promise<vscode.Ur
         monthlyResetEnabled: true,
         lazyActivation: true,
         autoWarmOnReset: false,
-        apiKeySecret: "borger.provider.temmy.apiKey"
+        apiKeySecret: "borger.provider.local-litellm.apiKey"
       }
     ]
   };
