@@ -1,4 +1,4 @@
-import { WorkspaceSummary } from "../tools/workspace";
+import { WorkspaceContext } from "./contextBuilder";
 
 export const systemPrompt = `You are Borger, a private VS Code coding agent.
 
@@ -20,14 +20,16 @@ Do not make destructive changes without clearly identifying them first.
 
 Assume this is a private developer workflow.`;
 
-export function buildPlanPrompt(task: string, summary: WorkspaceSummary): string {
+export function buildPlanPrompt(task: string, context: WorkspaceContext): string {
   return `Plan mode only. Do not propose direct file edits yet.
+Do not run terminal commands.
+Use the workspace context to be concrete about likely files, risks, and verification steps.
 
 User task:
 ${task}
 
-Workspace summary:
-${JSON.stringify(summary, null, 2)}
+Workspace context:
+${JSON.stringify(context, null, 2)}
 
 Return:
 1. Understanding of the task

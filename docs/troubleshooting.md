@@ -40,6 +40,15 @@ http://localhost:4000/v1
 - If command policy blocks a command, check `blockedCommandPatterns` and `allowedCommands`.
 - Authorization decisions are logged to `.borger/action-log.jsonl`, which is ignored by git.
 
+## Workspace Context Issues
+
+- If `Borger: Inspect Workspace` shows no workspace, open a folder in VS Code instead of a single file.
+- If expected files are missing from context, check `.gitignore`, `borger.maxContextFiles`, and the always-ignored folder list.
+- If a file is skipped, it may be over `borger.maxFileSizeKb`, binary, outside the workspace, or secret-like.
+- `.env.example` is intentionally allowed, but `.env`, `.env.local`, private keys, token files, and credential files are skipped.
+- If git status is unavailable, confirm the workspace is a git repository and that the permission profile allows workspace or git inspection.
+- If diagnostics are empty, make sure the relevant VS Code language extension has finished loading.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

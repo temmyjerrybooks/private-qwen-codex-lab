@@ -55,9 +55,22 @@
 - Keep provider budget routing active for model calls
 - Keep permission checks active for workspace-aware planning
 
+## Phase 4 - Workspace Context Intelligence
+
+- Add ignore-aware file tree scanning
+- Add safe file reader with size, binary, and secret-file guards
+- Detect project types and frameworks
+- Summarize important project files
+- Capture current active file and selected text
+- Collect VS Code diagnostics
+- Read git branch and `git status --short` through read-only git operations
+- Build structured workspace context object
+- Feed workspace context into Plan Task
+- Show richer context status in the Borger sidebar
+- Document context behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 4: Workspace context intelligence
 - Phase 5: Plan mode upgrade
 - Phase 6: Diff and patch preview
 - Phase 7: Edit mode

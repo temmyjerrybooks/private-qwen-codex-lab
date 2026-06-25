@@ -71,4 +71,24 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 4
+
+- `Borger: Inspect Workspace` returns a richer workspace summary
+- Workspace scanning respects `.gitignore` where practical
+- Workspace scanning always ignores common heavy folders
+- Workspace scanning avoids secret-like files and allows `.env.example`
+- Project type and framework detection exists
+- Important project files are summarized
+- Package scripts and likely verification commands are included
+- Current active file can be included when safe
+- Selected text can be included when present
+- VS Code diagnostics summary is included
+- Git branch and `git status --short` are read only when permitted
+- Permission checks remain active
+- Provider router remains active
+- LiteLLM support remains active
+- Sidebar shows richer workspace context status
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

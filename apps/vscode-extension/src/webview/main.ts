@@ -6,6 +6,7 @@ const vscode = acquireVsCodeApi();
 
 const statusEl = document.getElementById("status");
 const workspaceEl = document.getElementById("workspace");
+const contextStatusEl = document.getElementById("contextStatus");
 const planOutputEl = document.getElementById("planOutput");
 const taskInputEl = document.getElementById("taskInput") as HTMLTextAreaElement | null;
 const inspectButton = document.getElementById("inspectButton");
@@ -37,8 +38,12 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     if (statusEl) {
       statusEl.textContent = message.status ?? "Ready";
     }
-    if (workspaceEl && isWorkspaceSummary(message.body)) {
-      workspaceEl.textContent = message.body.workspaceName;
+    if (workspaceEl && isWorkspaceContext(message.body)) {
+      const frameworks = message.body.likelyFrameworks.length > 0 ? message.body.likelyFrameworks.join(", ") : "No framework detected";
+      workspaceEl.textContent = `${message.body.workspaceName} - ${frameworks}`;
+    }
+    if (contextStatusEl) {
+      contextStatusEl.innerHTML = renderContextStatus(message.body);
     }
     if (planOutputEl && message.body) {
       planOutputEl.textContent = JSON.stringify(message.body, null, 2);
@@ -68,8 +73,37 @@ interface WebviewResponse {
   error?: string;
 }
 
-function isWorkspaceSummary(value: unknown): value is { workspaceName: string } {
+function isWorkspaceContext(value: unknown): value is WorkspaceContextMessage {
   return Boolean(value && typeof value === "object" && "workspaceName" in value);
+}
+
+interface WorkspaceContextMessage {
+  workspaceName: string;
+  projectName?: string;
+  projectTypes?: string[];
+  likelyFrameworks: string[];
+  contextStatus?: string;
+  openFile?: string;
+  diagnostics?: {
+    total: number;
+    errorCount: number;
+    warningCount: number;
+  };
+  gitStatus?: {
+    available: boolean;
+    branch?: string;
+    clean?: boolean;
+    entries: unknown[];
+    error?: string;
+    permission?: {
+      allowed: boolean;
+      reason: string;
+    };
+  };
+  selectedText?: {
+    text: string;
+  };
+  importantFiles?: Array<{ path: string }>;
 }
 
 interface ProviderStatusReport {
@@ -150,6 +184,41 @@ function renderPermissionStatus(state: PermissionState | undefined, error: strin
     ["Risk", risky.length > 0 ? risky.join(", ") : "none"],
     ["Command", "Borger: Show Permissions"],
     ["Warning", state.warning || "none"]
+  ];
+
+  return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+}
+
+function renderContextStatus(body: unknown): string {
+  if (!body) {
+    return "<div><dt>Status</dt><dd>Not inspected</dd></div>";
+  }
+  if (!isWorkspaceContext(body)) {
+    if (typeof body === "object" && body && "error" in body) {
+      return `<div><dt>Error</dt><dd>${escapeHtml(String((body as { error?: unknown }).error ?? "unknown"))}</dd></div>`;
+    }
+    return "<div><dt>Status</dt><dd>Waiting</dd></div>";
+  }
+
+  const diagnostics = body.diagnostics
+    ? `${body.diagnostics.errorCount} errors, ${body.diagnostics.warningCount} warnings, ${body.diagnostics.total} total`
+    : "not loaded";
+  const git = body.gitStatus
+    ? body.gitStatus.available
+      ? `${body.gitStatus.branch || "branch unknown"}; ${body.gitStatus.clean ? "clean" : `${body.gitStatus.entries.length} changed`}`
+      : body.gitStatus.permission?.allowed === false
+        ? `blocked: ${body.gitStatus.permission.reason}`
+        : body.gitStatus.error || "not available"
+    : "not loaded";
+  const rows = [
+    ["Project", body.projectName || body.workspaceName],
+    ["Types", body.projectTypes?.join(", ") || "none"],
+    ["Files", body.contextStatus || "not sampled"],
+    ["Important", body.importantFiles?.map((file) => file.path).join(", ") || "none"],
+    ["Current", body.openFile || "none"],
+    ["Selection", body.selectedText ? `${body.selectedText.text.length} chars` : "none"],
+    ["Diagnostics", diagnostics],
+    ["Git", git]
   ];
 
   return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");

@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
+import { buildWorkspaceContext } from "../agent/contextBuilder";
 import { planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { loadPermissionState } from "../permissions/permissionState";
 import { ProviderRouter } from "../providers/providerRouter";
-import { inspectWorkspace } from "../tools/workspace";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -77,7 +77,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       try {
         const decision = await authorizeAction("read_workspace");
         assertAuthorized(decision);
-        const summary = await inspectWorkspace();
+        const summary = await buildWorkspaceContext(this.context);
         this.postState("Workspace inspected", summary);
         await this.postProviderStatus();
         await this.postPermissionStatus();
@@ -90,11 +90,17 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     }
 
     if (message.type === "planTask" && typeof message.task === "string") {
-      this.postState("Planning...");
-      const result = await planTask(message.task, this.context);
-      this.postPlan(result);
-      await this.postProviderStatus();
-      await this.postPermissionStatus();
+      try {
+        this.postState("Planning...");
+        const result = await planTask(message.task, this.context);
+        this.postPlan(result);
+        await this.postProviderStatus();
+        await this.postPermissionStatus();
+      } catch (error) {
+        this.postState("Planning failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
       return;
     }
 
@@ -137,6 +143,15 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     <section class="meta">
       <span>Mode: <strong>${config.mode}</strong></span>
       <span>Model: <strong>${config.model}</strong></span>
+    </section>
+
+    <section class="provider-box">
+      <div class="section-title">
+        <h2>Context</h2>
+      </div>
+      <dl id="contextStatus" class="provider-status">
+        <div><dt>Status</dt><dd>Not inspected</dd></div>
+      </dl>
     </section>
 
     <section class="provider-box">

@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
+import { buildWorkspaceContext, selectedProviderToSummary } from "./contextBuilder";
 import { LiteLLMClient } from "../model/litellmClient";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { ProviderRouter } from "../providers/providerRouter";
-import { inspectWorkspace } from "../tools/workspace";
 import { buildPlanPrompt, systemPrompt } from "./prompts";
 
 export async function planTask(task: string, context: vscode.ExtensionContext): Promise<string> {
@@ -13,9 +13,13 @@ export async function planTask(task: string, context: vscode.ExtensionContext): 
 
   const decision = await authorizeAction("read_workspace");
   assertAuthorized(decision);
-  const summary = await inspectWorkspace();
+  const workspaceContext = await buildWorkspaceContext(context);
   const router = new ProviderRouter(context);
   const selection = await router.selectProvider("plan");
+  const promptContext = {
+    ...workspaceContext,
+    activeProvider: selectedProviderToSummary(selection)
+  };
   const client = new LiteLLMClient(
     {
       baseUrl: selection.provider.baseUrl,
@@ -29,7 +33,7 @@ export async function planTask(task: string, context: vscode.ExtensionContext): 
   try {
     const result = await client.chat([
       { role: "system", content: systemPrompt },
-      { role: "user", content: buildPlanPrompt(trimmedTask, summary) }
+      { role: "user", content: buildPlanPrompt(trimmedTask, promptContext) }
     ]);
     await router.recordRequest(selection, "plan", Date.now() - startedAt, true);
     return result;

@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("borger.memoryView", SidebarTreeProvider.memory()),
     vscode.window.registerTreeDataProvider("borger.settingsView", SidebarTreeProvider.settings()),
     registerOpenAgentCommand(agentPanel),
-    registerInspectWorkspaceCommand(output),
+    registerInspectWorkspaceCommand(context, output),
     registerTestModelConnectionCommand(context, output),
     registerPlanTaskCommand(context, output, agentPanel),
     registerAskAboutFileCommand(),

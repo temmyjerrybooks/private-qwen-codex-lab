@@ -29,7 +29,31 @@ For Phase 3, `borger.litellmBaseUrl` should point at the local LiteLLM gateway, 
 
 ## Sidebar
 
-Open the Borger activity bar item. The Phase 1 sidebar supports workspace inspection and plan requests. Tasks, Changes, Memory, and Settings sections exist as placeholders for later phases.
+Open the Borger activity bar item. The sidebar shows context, permission, provider, task input, and plan output sections. Tasks, Changes, Memory, and Settings sections exist as placeholders for later phases.
+
+## Workspace Context
+
+Run:
+
+```text
+Borger: Inspect Workspace
+```
+
+Borger collects a read-only context snapshot with:
+
+- workspace root and project name
+- detected project types and frameworks
+- safe file tree sample
+- important file summaries
+- package scripts and likely verification commands
+- current active file and selected text when available
+- VS Code diagnostics summary
+- read-only git branch and `git status --short` summary when permitted
+- permission profile and active provider summary
+
+Workspace scans respect `.gitignore` where practical and always ignore `node_modules`, `.git`, `dist`, `build`, `.next`, `out`, `coverage`, `.turbo`, `.cache`, `.venv`, and `__pycache__`. Borger skips secret-like files, private keys, token files, and credential files. `.env.example` is read because it is intended as safe documentation.
+
+`Borger: Plan Task` checks `read_workspace`, builds the same workspace context, selects an eligible provider through the budget router, and sends the context through LiteLLM. It does not edit files or run terminal commands in Phase 4.
 
 ## Commands
 

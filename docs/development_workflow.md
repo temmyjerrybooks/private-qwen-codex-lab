@@ -22,3 +22,12 @@
 3. Keep `.borger/permissions.local.json` local and uncommitted.
 4. Review `.borger/action-log.jsonl` when debugging authorization decisions.
 5. Keep destructive commands blocked unless a future task explicitly requires and confirms them.
+
+## Context Workflow
+
+1. Open the target project folder in VS Code.
+2. Run `Borger: Inspect Workspace` before planning large work.
+3. Review the Borger output channel for detected frameworks, important files, diagnostics, git status, active provider, and ignored-file behavior.
+4. Select relevant code in the editor before planning if the task depends on a specific function or component.
+5. Run `Borger: Plan Task`; Borger includes the same context snapshot in the model prompt.
+6. Treat likely verification commands as recommendations only. Phase 4 does not run commands.
