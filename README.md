@@ -62,10 +62,35 @@ Each provider can have its own endpoint, model, budget, warning threshold, stop 
 
 Monthly reset is lazy by default: Borger resets local provider state when the reset date arrives, but it does not warm, smoke test, or call any endpoint until the user runs a real task or manually tests the connection.
 
+## Permission System
+
+Phase 2.7 adds a local capability system for future edit, terminal, git, GitHub, SSH, deploy, and auto-agent workflows.
+
+Default profile:
+
+```text
+edit_with_review
+```
+
+Local permission config is stored at:
+
+```text
+.borger/permissions.local.json
+```
+
+Authorization decisions are logged to:
+
+```text
+.borger/action-log.jsonl
+```
+
+Both files are ignored by git. Use `Borger: Show Permissions` to inspect the active profile and `Borger: Update Permission Profile` to change the local workspace profile.
+
 ## Phase Status
 
 - Phase 1: Repository scaffold and VS Code extension shell - implemented
 - Phase 2: Modal H200:2 SGLang deployment - implemented
 - Phase 2.5: Multi-provider budget router - implemented
+- Phase 2.7: Capability and authorization system - implemented
 - Phase 3: LiteLLM gateway - not started
 - Phase 4+: Not started

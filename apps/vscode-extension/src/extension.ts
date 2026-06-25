@@ -11,9 +11,11 @@ import { registerPlanTaskCommand } from "./commands/planTask";
 import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
+import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
 import { registerSwitchProviderCommand } from "./commands/switchProvider";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
+import { registerUpdatePermissionProfileCommand } from "./commands/updatePermissionProfile";
 import { AgentPanel } from "./panels/AgentPanel";
 import { SidebarTreeProvider } from "./panels/SidebarTreeProvider";
 import { createOutputChannel } from "./ui/outputChannel";
@@ -46,7 +48,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerCheckProviderBudgetsCommand(context, output),
     registerSwitchProviderCommand(context),
     registerShowProviderStatusCommand(context, output),
-    registerResetProviderStateCommand(context)
+    registerResetProviderStateCommand(context),
+    registerShowPermissionsCommand(output),
+    registerUpdatePermissionProfileCommand()
   );
 
   output.appendLine("Borger extension activated.");

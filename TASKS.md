@@ -42,6 +42,8 @@
 - Add VS Code permission settings
 - Add `Borger: Show Permissions`
 - Add `Borger: Update Permission Profile`
+- Integrate read authorization into workspace inspection and plan mode
+- Show permission profile in the Borger sidebar
 
 ## Phase 3 - LiteLLM Gateway
 

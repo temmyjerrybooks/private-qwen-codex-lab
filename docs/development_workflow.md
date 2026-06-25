@@ -14,3 +14,11 @@
 4. Use `Borger: Show Provider Status` before model-heavy work.
 5. Use `Borger: Check Provider Budgets` to refresh local budget state.
 6. Let budget-paused providers reset lazily next month; do not warm all providers automatically.
+
+## Permission Workflow
+
+1. Run `Borger: Show Permissions` before enabling stronger agent workflows.
+2. Run `Borger: Update Permission Profile` to choose the local workspace profile.
+3. Keep `.borger/permissions.local.json` local and uncommitted.
+4. Review `.borger/action-log.jsonl` when debugging authorization decisions.
+5. Keep destructive commands blocked unless a future task explicitly requires and confirms them.

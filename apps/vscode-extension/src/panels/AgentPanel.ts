@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
+import { assertAuthorized, authorizeAction } from "../permissions/authorization";
+import { loadPermissionState } from "../permissions/permissionState";
 import { ProviderRouter } from "../providers/providerRouter";
 import { inspectWorkspace } from "../tools/workspace";
 
@@ -32,6 +34,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     this.postState("Ready");
     void this.postProviderStatus();
+    void this.postPermissionStatus();
   }
 
   async focus(): Promise<void> {
@@ -57,11 +60,32 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: "providerStatus", reports });
   }
 
+  async postPermissionStatus(): Promise<void> {
+    try {
+      const state = await loadPermissionState();
+      this.view?.webview.postMessage({ type: "permissionStatus", state });
+    } catch (error) {
+      this.view?.webview.postMessage({
+        type: "permissionStatus",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
   private async handleMessage(message: WebviewMessage): Promise<void> {
     if (message.type === "inspectWorkspace") {
-      const summary = await inspectWorkspace();
-      this.postState("Workspace inspected", summary);
-      await this.postProviderStatus();
+      try {
+        const decision = await authorizeAction("read_workspace");
+        assertAuthorized(decision);
+        const summary = await inspectWorkspace();
+        this.postState("Workspace inspected", summary);
+        await this.postProviderStatus();
+        await this.postPermissionStatus();
+      } catch (error) {
+        this.postState("Workspace inspection blocked", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
       return;
     }
 
@@ -70,11 +94,17 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       const result = await planTask(message.task, this.context);
       this.postPlan(result);
       await this.postProviderStatus();
+      await this.postPermissionStatus();
       return;
     }
 
     if (message.type === "refreshProviderStatus") {
       await this.postProviderStatus();
+      return;
+    }
+
+    if (message.type === "refreshPermissionStatus") {
+      await this.postPermissionStatus();
       return;
     }
 
@@ -107,6 +137,16 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     <section class="meta">
       <span>Mode: <strong>${config.mode}</strong></span>
       <span>Model: <strong>${config.model}</strong></span>
+    </section>
+
+    <section class="provider-box">
+      <div class="section-title">
+        <h2>Permissions</h2>
+        <button id="permissionRefreshButton">Refresh</button>
+      </div>
+      <dl id="permissionStatus" class="provider-status">
+        <div><dt>Profile</dt><dd>Checking...</dd></div>
+      </dl>
     </section>
 
     <section class="provider-box">

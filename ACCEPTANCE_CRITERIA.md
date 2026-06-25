@@ -51,6 +51,10 @@
 - Borger logs allowed actions
 - Borger can be configured for trusted personal use
 - Secrets and local permission configs are ignored by git
+- Workspace inspection respects read permission
+- Plan task respects read permission
+- `Borger: Show Permissions` exists
+- `Borger: Update Permission Profile` exists
 
 ## Phase 3
 

@@ -12,6 +12,8 @@ const inspectButton = document.getElementById("inspectButton");
 const planButton = document.getElementById("planButton");
 const providerRefreshButton = document.getElementById("providerRefreshButton");
 const providerStatusEl = document.getElementById("providerStatus");
+const permissionRefreshButton = document.getElementById("permissionRefreshButton");
+const permissionStatusEl = document.getElementById("permissionStatus");
 
 inspectButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "inspectWorkspace" });
@@ -23,6 +25,10 @@ planButton?.addEventListener("click", () => {
 
 providerRefreshButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "refreshProviderStatus" });
+});
+
+permissionRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "refreshPermissionStatus" });
 });
 
 window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
@@ -46,14 +52,20 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
   if (message.type === "providerStatus" && providerStatusEl) {
     providerStatusEl.innerHTML = renderProviderStatus(message.reports ?? []);
   }
+
+  if (message.type === "permissionStatus" && permissionStatusEl) {
+    permissionStatusEl.innerHTML = renderPermissionStatus(message.state, message.error);
+  }
 });
 
 interface WebviewResponse {
-  type: "state" | "plan" | "providerStatus";
+  type: "state" | "plan" | "providerStatus" | "permissionStatus";
   status?: string;
   body?: unknown;
   plan?: string;
   reports?: ProviderStatusReport[];
+  state?: PermissionState;
+  error?: string;
 }
 
 function isWorkspaceSummary(value: unknown): value is { workspaceName: string } {
@@ -76,6 +88,24 @@ interface ProviderStatusReport {
   reason?: string;
 }
 
+interface PermissionState {
+  profile: {
+    id: string;
+    label: string;
+  };
+  capabilities: {
+    canReadWorkspace: boolean;
+    canWriteWorkspace: boolean;
+    canRunTerminal: boolean;
+    canUseGit: boolean;
+    canPushGitHub: boolean;
+    canUseSSH: boolean;
+    canDeploy: boolean;
+  };
+  source: string;
+  warning?: string;
+}
+
 function renderProviderStatus(reports: ProviderStatusReport[]): string {
   if (reports.length === 0) {
     return "<div><dt>Active</dt><dd>No providers configured</dd></div>";
@@ -92,6 +122,34 @@ function renderProviderStatus(reports: ProviderStatusReport[]): string {
     ["Reset", active.state.nextResetAt],
     ["Lazy", active.provider.lazyActivation ? "enabled" : "disabled"],
     ["Reason", pausedReason]
+  ];
+
+  return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+}
+
+function renderPermissionStatus(state: PermissionState | undefined, error: string | undefined): string {
+  if (error) {
+    return `<div><dt>Profile</dt><dd>${escapeHtml(error)}</dd></div>`;
+  }
+  if (!state) {
+    return "<div><dt>Profile</dt><dd>No permission state loaded</dd></div>";
+  }
+
+  const risky = [
+    state.capabilities.canRunTerminal ? "terminal" : "",
+    state.capabilities.canPushGitHub ? "GitHub push" : "",
+    state.capabilities.canUseSSH ? "SSH" : "",
+    state.capabilities.canDeploy ? "deploy" : ""
+  ].filter(Boolean);
+
+  const rows = [
+    ["Profile", `${state.profile.label} (${state.profile.id})`],
+    ["Source", state.source],
+    ["Read", state.capabilities.canReadWorkspace ? "allowed" : "blocked"],
+    ["Write", state.capabilities.canWriteWorkspace ? "allowed" : "blocked"],
+    ["Risk", risky.length > 0 ? risky.join(", ") : "none"],
+    ["Command", "Borger: Show Permissions"],
+    ["Warning", state.warning || "none"]
   ];
 
   return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");

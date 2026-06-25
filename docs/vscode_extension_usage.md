@@ -40,6 +40,8 @@ Open the Borger activity bar item. The Phase 1 sidebar supports workspace inspec
 - `Borger: Switch Provider`
 - `Borger: Show Provider Status`
 - `Borger: Reset Provider State`
+- `Borger: Show Permissions`
+- `Borger: Update Permission Profile`
 
 ## Provider Routing
 
@@ -70,3 +72,38 @@ Before `Borger: Test Model Connection` or `Borger: Plan Task`, Borger:
 If every provider is paused, failed, disabled, or over budget, the model call is blocked with a clear error.
 
 Monthly reset uses lazy activation by default. A renewed provider does not consume Modal credit until a real task or manual connection test calls it.
+
+## Permissions
+
+Borger uses a local permission profile before actions that read the workspace or, in future phases, edit files, run commands, use git, deploy, or connect through SSH.
+
+Profiles:
+
+- `read_only`
+- `plan_only`
+- `edit_with_review`
+- `trusted_workspace`
+- `full_auto`
+- `remote_ops`
+
+Default profile:
+
+```text
+edit_with_review
+```
+
+Run `Borger: Show Permissions` to view the active profile, capabilities, command policy, local config location, and recent authorization decisions.
+
+Run `Borger: Update Permission Profile` to create or update:
+
+```text
+.borger/permissions.local.json
+```
+
+Authorization decisions are logged to:
+
+```text
+.borger/action-log.jsonl
+```
+
+Both files are ignored by git. By default, destructive command patterns such as `rm -rf`, `git reset --hard`, `git push --force`, `shutdown`, `del /s`, and `remove-item -recurse -force` are blocked.

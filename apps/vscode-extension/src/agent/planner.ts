@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { LiteLLMClient } from "../model/litellmClient";
+import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { ProviderRouter } from "../providers/providerRouter";
 import { inspectWorkspace } from "../tools/workspace";
 import { buildPlanPrompt, systemPrompt } from "./prompts";
@@ -10,6 +11,8 @@ export async function planTask(task: string, context: vscode.ExtensionContext): 
     return "Enter a task for Borger to plan.";
   }
 
+  const decision = await authorizeAction("read_workspace");
+  assertAuthorized(decision);
   const summary = await inspectWorkspace();
   const router = new ProviderRouter(context);
   const selection = await router.selectProvider("plan");

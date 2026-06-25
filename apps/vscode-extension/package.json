@@ -20,7 +20,9 @@
     "onCommand:borger.checkProviderBudgets",
     "onCommand:borger.switchProvider",
     "onCommand:borger.showProviderStatus",
-    "onCommand:borger.resetProviderState"
+    "onCommand:borger.resetProviderState",
+    "onCommand:borger.showPermissions",
+    "onCommand:borger.updatePermissionProfile"
   ],
   "main": "./dist/extension.js",
   "scripts": {
@@ -91,6 +93,80 @@
           "type": "boolean",
           "default": true,
           "description": "Require confirmation before running terminal commands."
+        },
+        "borger.permissionProfile": {
+          "type": "string",
+          "default": "edit_with_review",
+          "enum": [
+            "read_only",
+            "plan_only",
+            "edit_with_review",
+            "trusted_workspace",
+            "full_auto",
+            "remote_ops"
+          ],
+          "description": "Default Borger permission profile when .borger/permissions.local.json is absent."
+        },
+        "borger.canReadWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canWriteWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canRunTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canUseGit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canPushGitHub": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canUseSSH": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canDeploy": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.canRunDestructiveCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default capability flag documented for local permission profiles."
+        },
+        "borger.requireConfirmationForDestructive": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before destructive actions."
+        },
+        "borger.requireConfirmationForGitPush": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before GitHub push actions."
+        },
+        "borger.requireConfirmationForSSH": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before SSH actions."
+        },
+        "borger.maxAutoFixLoops": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "Maximum auto-fix loops for future auto modes."
         },
         "borger.providerRoutingEnabled": {
           "type": "boolean",
@@ -213,6 +289,14 @@
       {
         "command": "borger.runAgentTask",
         "title": "Borger: Run Agent Task"
+      },
+      {
+        "command": "borger.showPermissions",
+        "title": "Borger: Show Permissions"
+      },
+      {
+        "command": "borger.updatePermissionProfile",
+        "title": "Borger: Update Permission Profile"
       },
       {
         "command": "borger.manageProviders",
