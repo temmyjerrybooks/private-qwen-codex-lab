@@ -96,9 +96,24 @@
 - Keep actual file writing disabled until Phase 7
 - Document proposed changes and preview-only approval behavior
 
+## Phase 7 - Real Edit Mode and Safe File Application
+
+- Add safe workspace write helpers
+- Apply approved create and modify pending changes
+- Keep delete proposals disabled
+- Add applied and failed pending change statuses
+- Add backup snapshots before modifying existing files
+- Ignore `.borger/backups/` in git
+- Add revert-last-apply support for modify backups
+- Log apply, create, write, and delete authorization decisions
+- Add sidebar controls for applying approved changes and one file
+- Add commands for applying approved changes, applying one pending change, and reverting last apply
+- Preserve provider routing, budget checks, LiteLLM support, workspace context, and permission checks
+- Keep terminal execution, git push, SSH, deploy, and auto mode out of scope
+- Document safe apply behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 7: Edit mode
 - Phase 8: Terminal execution
 - Phase 9: Fix mode
 - Phase 10: Auto mode

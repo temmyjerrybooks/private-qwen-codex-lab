@@ -100,7 +100,7 @@ function normalizeAndValidateProposalPath(path: string, action: ProposedEditActi
     throw new Error(`Invalid ${action} path "${path}": absolute paths are not allowed.`);
   }
   if (isSecretPath(normalized)) {
-    throw new Error(`Blocked ${action} path "${normalized}": secret-like files cannot be proposed in Phase 6.`);
+    throw new Error(`Blocked ${action} path "${normalized}": secret-like files cannot be proposed or applied by Borger.`);
   }
 
   return normalized;

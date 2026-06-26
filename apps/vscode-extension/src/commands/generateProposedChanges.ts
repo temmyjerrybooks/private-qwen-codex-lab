@@ -8,7 +8,7 @@ export function registerGenerateProposedChangesCommand(
   return vscode.commands.registerCommand("borger.generateProposedChanges", async () => {
     const task = await vscode.window.showInputBox({
       title: "Borger Generate Proposed Changes",
-      prompt: "Describe the change Borger should propose for review.",
+      prompt: "Describe the change Borger should propose for review before any approved apply step.",
       ignoreFocusOut: true
     });
 

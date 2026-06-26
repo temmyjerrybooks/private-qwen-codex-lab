@@ -1,7 +1,7 @@
 import { ActiveProviderSummary } from "./contextBuilder";
 import { ParsedEditCommand } from "./patchParser";
 
-export type PendingChangeStatus = "pending" | "approved" | "rejected" | "invalid";
+export type PendingChangeStatus = "pending" | "approved" | "rejected" | "applied" | "failed" | "invalid";
 export type PendingChangeAction = "create" | "modify" | "delete";
 
 export interface PendingFileChange {
@@ -15,6 +15,10 @@ export interface PendingFileChange {
   diff: string;
   warning?: string;
   invalidReason?: string;
+  appliedAt?: string;
+  failedReason?: string;
+  backupId?: string;
+  backupPath?: string;
 }
 
 export interface PendingChangeSet {
@@ -60,7 +64,9 @@ export function markPendingChange(changeId: string, status: PendingChangeStatus)
   currentPendingChanges = {
     ...currentPendingChanges,
     changes: currentPendingChanges.changes.map((change) =>
-      change.id === changeId && change.status !== "invalid" ? { ...change, status } : change
+      change.id === changeId && canReviewStatusChange(change.status)
+        ? { ...change, status, failedReason: undefined }
+        : change
     )
   };
   return currentPendingChanges;
@@ -73,13 +79,56 @@ export function markAllPendingChanges(status: PendingChangeStatus): PendingChang
 
   currentPendingChanges = {
     ...currentPendingChanges,
-    changes: currentPendingChanges.changes.map((change) => (change.status !== "invalid" ? { ...change, status } : change))
+    changes: currentPendingChanges.changes.map((change) =>
+      canReviewStatusChange(change.status) ? { ...change, status, failedReason: undefined } : change
+    )
   };
   return currentPendingChanges;
 }
 
 export function getPendingChange(changeId: string): PendingFileChange | undefined {
   return currentPendingChanges?.changes.find((change) => change.id === changeId);
+}
+
+export function updatePendingChange(
+  changeId: string,
+  updates: Partial<Omit<PendingFileChange, "id">>
+): PendingChangeSet | undefined {
+  if (!currentPendingChanges) {
+    return undefined;
+  }
+
+  currentPendingChanges = {
+    ...currentPendingChanges,
+    changes: currentPendingChanges.changes.map((change) =>
+      change.id === changeId ? { ...change, ...updates } : change
+    )
+  };
+  return currentPendingChanges;
+}
+
+export function markPendingChangeApplied(
+  changeId: string,
+  backup?: { id: string; path?: string }
+): PendingChangeSet | undefined {
+  return updatePendingChange(changeId, {
+    status: "applied",
+    appliedAt: new Date().toISOString(),
+    failedReason: undefined,
+    backupId: backup?.id,
+    backupPath: backup?.path
+  });
+}
+
+export function markPendingChangeFailed(changeId: string, failedReason: string): PendingChangeSet | undefined {
+  return updatePendingChange(changeId, {
+    status: "failed",
+    failedReason
+  });
+}
+
+function canReviewStatusChange(status: PendingChangeStatus): boolean {
+  return status !== "invalid" && status !== "applied";
 }
 
 function createId(): string {

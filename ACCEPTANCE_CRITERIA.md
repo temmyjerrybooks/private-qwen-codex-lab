@@ -137,4 +137,33 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 7
+
+- Borger can apply approved `create` pending changes
+- Borger can apply approved `modify` pending changes
+- Delete proposals remain disabled and fail safely if applied
+- Pending changes can become `applied` or `failed`
+- Failed apply attempts show readable reasons
+- File writes are constrained to the open workspace
+- Absolute paths and path escapes are blocked
+- Secret-like files are blocked, while `.env.example` remains allowed
+- Binary-looking content is not written
+- Existing files are backed up before modification
+- `.borger/backups/` is ignored by git
+- `Borger: Revert Last Apply` can restore the latest modify backup when possible
+- Apply actions check and log `apply_patch`
+- Create actions check and log `create_file`
+- Modify actions check and log `write_file`
+- Delete attempts check and log `delete_file` but do not delete files
+- Sidebar controls include apply-approved and per-file apply actions
+- Commands exist for apply approved, apply current pending change, show pending changes, clear pending changes, and revert last apply
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
+- Workspace context and plan mode still work
+- Terminal execution, GitHub push, SSH, deploy, and auto mode are not implemented
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

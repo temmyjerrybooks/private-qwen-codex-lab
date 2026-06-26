@@ -5,7 +5,7 @@ export function registerRunAgentTaskCommand(output: vscode.OutputChannel, agentP
   return vscode.commands.registerCommand("borger.runAgentTask", async () => {
     const task = await vscode.window.showInputBox({
       title: "Borger Run Agent Task",
-      prompt: "Phase 6 can generate proposed changes for review. Describe the task.",
+      prompt: "Describe the task. Borger will generate proposed changes for review before any approved apply step.",
       ignoreFocusOut: true
     });
 

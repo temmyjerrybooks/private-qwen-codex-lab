@@ -11,7 +11,7 @@ export class SidebarTreeProvider implements vscode.TreeDataProvider<SidebarItem>
 
   static changes(): SidebarTreeProvider {
     return new SidebarTreeProvider([
-      new SidebarItem("No pending changes", "Diff preview starts in Phase 6.", vscode.TreeItemCollapsibleState.None)
+      new SidebarItem("No pending changes", "Review and apply approved changes from the Agent panel.", vscode.TreeItemCollapsibleState.None)
     ]);
   }
 

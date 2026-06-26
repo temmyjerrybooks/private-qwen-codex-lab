@@ -11,6 +11,9 @@ export function formatPendingChangesForOutput(changeSet: PendingChangeSet | unde
       `Reason: ${change.reason}`,
       change.warning ? `Warning: ${change.warning}` : "",
       change.invalidReason ? `Invalid: ${change.invalidReason}` : "",
+      change.failedReason ? `Failed: ${change.failedReason}` : "",
+      change.appliedAt ? `Applied: ${change.appliedAt}` : "",
+      change.backupPath ? `Backup: ${change.backupPath}` : "",
       change.diff ? `Diff:\n${change.diff}` : "No diff available."
     ].filter(Boolean).join("\n"))
     .join("\n\n---\n\n");
@@ -36,5 +39,5 @@ export function formatPendingChangesForOutput(changeSet: PendingChangeSet | unde
 }
 
 export function diffProviderUnavailable(): string {
-  return "Diff preview is available in the Borger webview for pending Phase 6 changes.";
+  return "Diff preview and approved-change application are available in the Borger webview for pending Phase 7 changes.";
 }

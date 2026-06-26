@@ -19,6 +19,9 @@ const permissionStatusEl = document.getElementById("permissionStatus");
 const pendingChangesOutputEl = document.getElementById("pendingChangesOutput");
 const approveAllButton = document.getElementById("approveAllButton");
 const rejectAllButton = document.getElementById("rejectAllButton");
+const applyApprovedButton = document.getElementById("applyApprovedButton");
+const showAppliedButton = document.getElementById("showAppliedButton");
+const revertLastApplyButton = document.getElementById("revertLastApplyButton");
 const regenerateButton = document.getElementById("regenerateButton");
 const clearPendingButton = document.getElementById("clearPendingButton");
 
@@ -50,6 +53,18 @@ rejectAllButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "rejectAllPendingChanges" });
 });
 
+applyApprovedButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "applyApprovedChanges" });
+});
+
+showAppliedButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showAppliedChanges" });
+});
+
+revertLastApplyButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "revertLastApply" });
+});
+
 regenerateButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "generateProposedChanges", task: taskInputEl?.value ?? "" });
 });
@@ -68,10 +83,15 @@ pendingChangesOutputEl?.addEventListener("click", (event) => {
   if (!action || !changeId) {
     return;
   }
-  vscode.postMessage({
-    type: action === "approve" ? "approvePendingChange" : "rejectPendingChange",
-    changeId
-  });
+  const messageTypeByAction: Record<string, string> = {
+    approve: "approvePendingChange",
+    reject: "rejectPendingChange",
+    apply: "applyPendingChange"
+  };
+  const type = messageTypeByAction[action];
+  if (type) {
+    vscode.postMessage({ type, changeId });
+  }
 });
 
 window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
@@ -237,11 +257,17 @@ interface PendingFileChangeMessage {
   path: string;
   action: "create" | "modify" | "delete";
   reason: string;
-  status: "pending" | "approved" | "rejected" | "invalid";
+  status: PendingChangeStatusMessage;
   diff: string;
   warning?: string;
   invalidReason?: string;
+  appliedAt?: string;
+  failedReason?: string;
+  backupId?: string;
+  backupPath?: string;
 }
+
+type PendingChangeStatusMessage = "pending" | "approved" | "rejected" | "applied" | "failed" | "invalid";
 
 function renderProviderStatus(reports: ProviderStatusReport[]): string {
   if (reports.length === 0) {
@@ -392,7 +418,10 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
 
   const counts = countPendingStatuses(changeSet.changes);
   const files = changeSet.changes
-    .map((change) => `
+    .map((change) => {
+      const reviewDisabled = change.status === "invalid" || change.status === "applied";
+      const applyDisabled = change.status !== "approved";
+      return `
       <article class="change-card ${change.status}">
         <header class="change-header">
           <div>
@@ -404,12 +433,17 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
         </header>
         ${change.warning ? `<p class="warning">${escapeHtml(change.warning)}</p>` : ""}
         ${change.invalidReason ? `<p class="warning">${escapeHtml(change.invalidReason)}</p>` : ""}
+        ${change.failedReason ? `<p class="warning">${escapeHtml(change.failedReason)}</p>` : ""}
+        ${change.appliedAt ? `<p class="muted">Applied ${escapeHtml(change.appliedAt)}</p>` : ""}
+        ${change.backupPath ? `<p class="muted">Backup: <code>${escapeHtml(change.backupPath)}</code></p>` : ""}
         <pre class="diff-block">${escapeHtml(change.diff || "No diff available.")}</pre>
         <div class="actions">
-          <button data-action="approve" data-change-id="${escapeHtml(change.id)}" ${change.status === "invalid" ? "disabled" : ""}>Approve File Change</button>
-          <button data-action="reject" data-change-id="${escapeHtml(change.id)}" ${change.status === "invalid" ? "disabled" : ""}>Reject File Change</button>
+          <button data-action="approve" data-change-id="${escapeHtml(change.id)}" ${reviewDisabled ? "disabled" : ""}>Approve File Change</button>
+          <button data-action="reject" data-change-id="${escapeHtml(change.id)}" ${reviewDisabled ? "disabled" : ""}>Reject File Change</button>
+          <button data-action="apply" data-change-id="${escapeHtml(change.id)}" ${applyDisabled ? "disabled" : ""}>Apply This File</button>
         </div>
-      </article>`)
+      </article>`;
+    })
     .join("");
 
   const commands = changeSet.commandsToRunLater.length > 0
@@ -425,7 +459,7 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
     <section class="changes-summary">
       <h3>${escapeHtml(changeSet.summary)}</h3>
       <p>${escapeHtml(changeSet.task)} via ${escapeHtml(changeSet.provider.label)}</p>
-      <p>${counts.pending} pending, ${counts.approved} approved, ${counts.rejected} rejected, ${counts.invalid} invalid</p>
+      <p>${counts.pending} pending, ${counts.approved} approved, ${counts.applied} applied, ${counts.failed} failed, ${counts.rejected} rejected, ${counts.invalid} invalid</p>
     </section>
     ${files}
     <section class="plan-section">
@@ -438,13 +472,13 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
     </section>`;
 }
 
-function countPendingStatuses(changes: PendingFileChangeMessage[]): Record<PendingFileChangeMessage["status"], number> {
+function countPendingStatuses(changes: PendingFileChangeMessage[]): Record<PendingChangeStatusMessage, number> {
   return changes.reduce(
     (counts, change) => ({
       ...counts,
       [change.status]: counts[change.status] + 1
     }),
-    { pending: 0, approved: 0, rejected: 0, invalid: 0 }
+    { pending: 0, approved: 0, rejected: 0, applied: 0, failed: 0, invalid: 0 }
   );
 }
 

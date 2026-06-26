@@ -31,7 +31,7 @@
 4. Select relevant code in the editor before planning if the task depends on a specific function or component.
 5. Run `Borger: Plan Task`; Borger includes the same context snapshot in the model prompt.
 6. Review ranked relevant files, complexity, risks, assumptions, and recommended next action.
-7. Treat likely verification commands as recommendations only. Phase 6 does not run commands.
+7. Treat likely verification commands as recommendations only. Phase 7 does not run commands.
 
 ## Plan Mode Workflow
 
@@ -46,7 +46,18 @@
 1. Run `Borger: Plan Task` first for a structured approach.
 2. Run `Borger: Generate Proposed Changes` when you want proposed edits.
 3. Review every pending diff in the sidebar.
-4. Approve or reject file changes. Approval only marks review state in Phase 6.
+4. Approve or reject file changes. Approval marks review state and logs the file-intent authorization decision.
 5. Use `Borger: Show Pending Changes` to print the current pending set to the output channel.
 6. Use `Borger: Clear Pending Changes` before starting a different task.
-7. Do not expect files to change on disk until Phase 7.
+7. Use `Apply This File` or `Borger: Apply Current Pending Change` for one approved change.
+8. Use `Apply Approved Changes` or `Borger: Apply Approved Changes` for all approved changes.
+9. Check applied and failed statuses before clearing the pending set.
+
+## Safe Apply Workflow
+
+1. Keep the permission profile at `edit_with_review` or stronger when you intend to apply edits.
+2. Apply only after reviewing the unified diff.
+3. Borger checks `apply_patch`, then `create_file` or `write_file`, and logs each authorization decision.
+4. Borger creates `.borger/backups/` snapshots before modifying existing files.
+5. Use `Borger: Revert Last Apply` only for the latest modify backup. Created-file deletion remains disabled.
+6. Run verification commands yourself. Phase 7 does not run terminal commands, git, deploy, SSH, or auto mode.

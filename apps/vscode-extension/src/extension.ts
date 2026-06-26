@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import { registerApplyApprovedChangesCommand } from "./commands/applyApprovedChanges";
+import { registerApplyCurrentPendingChangeCommand } from "./commands/applyCurrentPendingChange";
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
 import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
@@ -12,6 +14,7 @@ import { registerOpenAgentCommand } from "./commands/openAgent";
 import { registerPlanTaskCommand } from "./commands/planTask";
 import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
+import { registerRevertLastApplyCommand } from "./commands/revertLastApply";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
 import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
@@ -50,6 +53,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerGenerateProposedChangesCommand(output, agentPanel),
     registerShowPendingChangesCommand(output, agentPanel),
     registerClearPendingChangesCommand(agentPanel),
+    registerApplyApprovedChangesCommand(output, agentPanel),
+    registerApplyCurrentPendingChangeCommand(output, agentPanel),
+    registerRevertLastApplyCommand(output, agentPanel),
     registerManageProvidersCommand(context),
     registerCheckProviderBudgetsCommand(context, output),
     registerSwitchProviderCommand(context),

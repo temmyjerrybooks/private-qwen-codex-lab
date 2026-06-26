@@ -19,6 +19,9 @@
     "onCommand:borger.generateProposedChanges",
     "onCommand:borger.showPendingChanges",
     "onCommand:borger.clearPendingChanges",
+    "onCommand:borger.applyApprovedChanges",
+    "onCommand:borger.applyCurrentPendingChange",
+    "onCommand:borger.revertLastApply",
     "onCommand:borger.manageProviders",
     "onCommand:borger.checkProviderBudgets",
     "onCommand:borger.switchProvider",
@@ -304,6 +307,18 @@
       {
         "command": "borger.clearPendingChanges",
         "title": "Borger: Clear Pending Changes"
+      },
+      {
+        "command": "borger.applyApprovedChanges",
+        "title": "Borger: Apply Approved Changes"
+      },
+      {
+        "command": "borger.applyCurrentPendingChange",
+        "title": "Borger: Apply Current Pending Change"
+      },
+      {
+        "command": "borger.revertLastApply",
+        "title": "Borger: Revert Last Apply"
       },
       {
         "command": "borger.showPermissions",

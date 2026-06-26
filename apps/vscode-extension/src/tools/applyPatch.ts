@@ -2,7 +2,24 @@ import * as vscode from "vscode";
 import { PendingFileChange } from "../agent/pendingChanges";
 import { ParsedEditChange } from "../agent/patchParser";
 import { buildUnifiedDiff } from "../ui/diffFormatter";
+import { createWorkspaceBackup, WorkspaceBackupSnapshot } from "./fileBackups";
 import { isSecretPath, normalizeRelativePath, readSafeWorkspaceFile } from "./readFile";
+import {
+  assertTextContentIsSafe,
+  readWorkspaceTextFileForWrite,
+  validateWorkspaceWritePath,
+  workspaceFileExists,
+  writeWorkspaceTextFile
+} from "./writeFile";
+
+export interface ApplyPendingFileChangeResult {
+  changeId: string;
+  path: string;
+  action: PendingFileChange["action"];
+  applied: boolean;
+  message: string;
+  backup?: WorkspaceBackupSnapshot;
+}
 
 export async function createPendingFileChangePreview(
   workspaceFolder: vscode.WorkspaceFolder,
@@ -53,12 +70,61 @@ export async function createPendingFileChangePreview(
     originalContent: original.content,
     proposedContent: "",
     diff: buildUnifiedDiff(path, original.content, ""),
-    warning: "Delete is preview-only in Phase 6. Actual deletion is reserved for a future authorized phase."
+    warning: "Delete proposals remain disabled in Phase 7. Actual deletion is reserved for a future authorized phase."
   };
 }
 
 export function applyPatchUnavailable(): string {
-  return "Patch application is preview-only in Phase 6. Actual workspace writes start in Phase 7.";
+  return "Patch application is available in Phase 7 only for approved pending changes after authorization and safety checks.";
+}
+
+export async function applyApprovedFileChange(
+  workspaceFolder: vscode.WorkspaceFolder,
+  change: PendingFileChange
+): Promise<ApplyPendingFileChangeResult> {
+  if (change.status !== "approved") {
+    throw new Error(`${change.path} is ${change.status}; only approved changes can be applied.`);
+  }
+
+  if (change.action === "delete") {
+    throw new Error("Delete proposals remain disabled in Phase 7 and are not applied.");
+  }
+
+  validateWorkspaceWritePath(workspaceFolder, change.path);
+  assertTextContentIsSafe(change.path, change.proposedContent);
+
+  if (change.action === "create") {
+    if (await workspaceFileExists(workspaceFolder, change.path)) {
+      throw new Error(`${change.path} already exists; refusing to overwrite during create.`);
+    }
+
+    const backup = await createWorkspaceBackup(workspaceFolder, change.path, "create");
+    await writeWorkspaceTextFile(workspaceFolder, change.path, change.proposedContent);
+    return {
+      changeId: change.id,
+      path: change.path,
+      action: change.action,
+      applied: true,
+      message: `Created ${change.path}.`,
+      backup
+    };
+  }
+
+  const currentContent = await readWorkspaceTextFileForWrite(workspaceFolder, change.path);
+  const backup = await createWorkspaceBackup(workspaceFolder, change.path, "modify", currentContent);
+  await writeWorkspaceTextFile(workspaceFolder, change.path, change.proposedContent);
+
+  const changedSincePreview = currentContent !== change.originalContent;
+  return {
+    changeId: change.id,
+    path: change.path,
+    action: change.action,
+    applied: true,
+    message: changedSincePreview
+      ? `Modified ${change.path}; current file differed from the preview baseline, so the latest content was backed up.`
+      : `Modified ${change.path}.`,
+    backup
+  };
 }
 
 function validatePreviewPath(path: string): string | undefined {
@@ -72,7 +138,7 @@ function validatePreviewPath(path: string): string | undefined {
     return "Absolute paths are not allowed.";
   }
   if (isSecretPath(path)) {
-    return "Secret-like files cannot be edited or previewed in Phase 6.";
+    return "Secret-like files cannot be edited or previewed by Borger.";
   }
   return undefined;
 }

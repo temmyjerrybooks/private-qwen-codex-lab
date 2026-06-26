@@ -95,16 +95,30 @@ Generate Proposed Changes
 
 Borger asks the model for a strict JSON edit proposal, parses it, validates each file path, reads original content safely, and shows pending diffs in the sidebar.
 
-Phase 6 supports review state only:
+Phase 7 supports reviewed file application:
 
 - `Approve File Change` marks one pending change as approved after authorization.
 - `Reject File Change` marks one pending change as rejected.
 - `Approve All` authorizes and marks all valid pending changes as approved.
 - `Reject All` marks all valid pending changes as rejected.
+- `Apply This File` applies one approved create/modify change.
+- `Apply Approved Changes` applies all approved create/modify changes.
+- `Show Applied Changes` refreshes the pending set with applied/failed statuses.
+- `Revert Last Apply` restores the latest modify backup when possible.
 - `Regenerate` asks the model for a fresh proposal for the current task.
 - `Clear` removes the in-memory pending changes.
 
-No file is written in Phase 6. Terminal execution, GitHub push, SSH, Auto Mode, and real edit application come later.
+Applying a change checks `apply_patch` and then `create_file` or `write_file`. Borger writes only inside the open workspace, rejects path escapes, blocks secret-like files, blocks binary-looking content, and keeps delete proposals disabled. `.env.example` is allowed; `.env`, private keys, token files, and credential files are blocked.
+
+Before modifying an existing file, Borger stores a backup snapshot in:
+
+```text
+.borger/backups/
+```
+
+The backup folder is ignored by git. Created-file reverts are intentionally disabled because Phase 7 does not perform automatic file deletion. Terminal execution, GitHub push, SSH, deployment, and Auto Mode come later.
+
+Phase 8 will add controlled terminal execution. Until then, verification commands shown by plans or pending changes are recommendations for the user to run manually.
 
 ## Commands
 
@@ -115,6 +129,9 @@ No file is written in Phase 6. Terminal execution, GitHub push, SSH, Auto Mode, 
 - `Borger: Generate Proposed Changes`
 - `Borger: Show Pending Changes`
 - `Borger: Clear Pending Changes`
+- `Borger: Apply Approved Changes`
+- `Borger: Apply Current Pending Change`
+- `Borger: Revert Last Apply`
 - `Borger: Manage Providers`
 - `Borger: Check Provider Budgets`
 - `Borger: Switch Provider`

@@ -121,6 +121,7 @@ textarea {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -361,7 +362,8 @@ code {
 }
 
 .change-pill.create,
-.change-status.approved {
+.change-status.approved,
+.change-status.applied {
   color: var(--vscode-testing-iconPassed);
 }
 
@@ -371,7 +373,8 @@ code {
 }
 
 .change-pill.delete,
-.change-status.invalid {
+.change-status.invalid,
+.change-status.failed {
   color: var(--vscode-errorForeground);
 }
 

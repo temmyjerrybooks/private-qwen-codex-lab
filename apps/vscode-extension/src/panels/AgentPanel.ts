@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import { buildWorkspaceContext } from "../agent/contextBuilder";
-import { generateProposedChanges } from "../agent/executor";
+import {
+  applyApprovedPendingChanges,
+  applyPendingChangeById,
+  generateProposedChanges,
+  revertLastAppliedChange
+} from "../agent/executor";
 import {
   clearPendingChanges,
   getPendingChange,
@@ -81,6 +86,54 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     await this.postPermissionStatus();
   }
 
+  async applyApprovedChanges(): Promise<void> {
+    try {
+      this.postState("Applying approved changes...");
+      const result = await applyApprovedPendingChanges();
+      this.output.show(true);
+      this.output.appendLine(["Borger apply approved changes:", ...result.messages].join("\n"));
+      this.postPendingChanges(result.changeSet);
+      this.postState(`Applied ${result.applied}; failed ${result.failed}`);
+      await this.postPermissionStatus();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.postState("Apply approved changes failed", { error: message });
+      throw error;
+    }
+  }
+
+  async applyPendingChange(changeId: string): Promise<void> {
+    try {
+      this.postState("Applying pending change...");
+      const result = await applyPendingChangeById(changeId);
+      this.output.show(true);
+      this.output.appendLine(["Borger apply pending change:", ...result.messages].join("\n"));
+      this.postPendingChanges(result.changeSet);
+      this.postState(`Applied ${result.applied}; failed ${result.failed}`);
+      await this.postPermissionStatus();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.postState("Apply pending change failed", { error: message });
+      throw error;
+    }
+  }
+
+  async revertLastApply(): Promise<void> {
+    try {
+      this.postState("Reverting last apply...");
+      const message = await revertLastAppliedChange();
+      this.output.show(true);
+      this.output.appendLine(`Borger revert last apply: ${message}`);
+      this.postState("Last apply reverted", { message });
+      this.postPendingChanges(getPendingChanges());
+      await this.postPermissionStatus();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.postState("Revert last apply failed", { error: message });
+      throw error;
+    }
+  }
+
   async postProviderStatus(): Promise<void> {
     const router = new ProviderRouter(this.context);
     const reports = await router.getStatusReports();
@@ -147,6 +200,12 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       return;
     }
 
+    if (message.type === "showAppliedChanges") {
+      this.postPendingChanges(getPendingChanges());
+      this.postState("Showing applied changes");
+      return;
+    }
+
     if (message.type === "clearPendingChanges") {
       clearPendingChanges();
       this.postPendingChanges(undefined);
@@ -163,6 +222,15 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       return;
     }
 
+    if (message.type === "applyPendingChange" && typeof message.changeId === "string") {
+      try {
+        await this.applyPendingChange(message.changeId);
+      } catch {
+        this.postPendingChanges(getPendingChanges());
+      }
+      return;
+    }
+
     if (message.type === "approveAllPendingChanges") {
       await this.approveAllPendingChanges();
       return;
@@ -170,6 +238,24 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     if (message.type === "rejectAllPendingChanges") {
       this.postPendingChanges(markAllPendingChanges("rejected"));
+      return;
+    }
+
+    if (message.type === "applyApprovedChanges") {
+      try {
+        await this.applyApprovedChanges();
+      } catch {
+        this.postPendingChanges(getPendingChanges());
+      }
+      return;
+    }
+
+    if (message.type === "revertLastApply") {
+      try {
+        await this.revertLastApply();
+      } catch {
+        this.postPendingChanges(getPendingChanges());
+      }
       return;
     }
 
@@ -193,7 +279,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       return;
     }
 
-    const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "apply_patch";
+    const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "write_file";
     const decision = await authorizeAction(action, { filePath: change.path });
     if (!decision.allowed) {
       this.postState("Approval blocked", { error: decision.reason });
@@ -211,10 +297,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     }
 
     for (const change of changeSet.changes) {
-      if (change.status === "invalid") {
+      if (change.status === "invalid" || change.status === "applied") {
         continue;
       }
-      const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "apply_patch";
+      const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "write_file";
       const decision = await authorizeAction(action, { filePath: change.path });
       if (!decision.allowed) {
         this.postState("Approve all blocked", { error: `${change.path}: ${decision.reason}` });
@@ -303,6 +389,9 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         <div class="change-actions">
           <button id="approveAllButton">Approve All</button>
           <button id="rejectAllButton">Reject All</button>
+          <button id="applyApprovedButton">Apply Approved Changes</button>
+          <button id="showAppliedButton">Show Applied Changes</button>
+          <button id="revertLastApplyButton">Revert Last Apply</button>
           <button id="regenerateButton">Regenerate</button>
           <button id="clearPendingButton">Clear</button>
         </div>

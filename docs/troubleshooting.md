@@ -57,13 +57,19 @@ http://localhost:4000/v1
 - If the model gives vague output, rerun with a more specific task and inspect the workspace first.
 - If commands appear in the plan, remember they are recommendations only. Phase 5 never runs terminal commands.
 
-## Diff Preview Issues
+## Diff Preview and Safe Apply Issues
 
 - If proposed changes fail to parse, the model likely returned malformed JSON. Regenerate with a narrower task.
 - If a pending change is invalid, check whether the path escapes the workspace, targets a secret-like file, or tries to modify a missing file.
 - If a create action is invalid, the file may already exist and should be proposed as `modify`.
-- If approve is blocked, run `Borger: Show Permissions` and confirm the relevant write/apply/delete capability is allowed.
-- If commands are listed under pending changes, they are suggestions for later verification only. Phase 6 never runs them.
+- If approve is blocked, run `Borger: Show Permissions` and confirm the relevant create/write/delete capability is allowed.
+- If apply is blocked, confirm `apply_patch` and the file action (`create_file` or `write_file`) are allowed by the active permission profile.
+- If a change fails during apply, check the file card for `failed` status and the output channel for the readable error.
+- If `.borger/backups/` is missing, apply a modify change first. Backups are created only when Borger writes.
+- If `Borger: Revert Last Apply` refuses a backup, the last backup may be for a created file. Phase 7 does not delete files automatically.
+- If a file is blocked as secret-like, rename or handle it manually. `.env.example` is allowed, but `.env`, private keys, token files, and credential files are blocked.
+- If content is blocked as binary, Borger detected null bytes or binary-looking control characters and will not write it.
+- If commands are listed under pending changes, they are suggestions for later verification only. Phase 7 never runs them.
 - If generated diffs are too large, reduce the task scope or lower the number of files the model should modify.
 
 ## Modal and Hugging Face Issues

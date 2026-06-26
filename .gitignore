@@ -12,3 +12,4 @@ coverage/
 .borger/provider-state.json
 .borger/permissions.local.json
 .borger/action-log.jsonl
+.borger/backups/
