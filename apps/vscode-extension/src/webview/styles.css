@@ -136,6 +136,11 @@ button:hover {
   background: var(--vscode-button-hoverBackground);
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .output {
   display: flex;
   flex-direction: column;
@@ -287,4 +292,107 @@ code {
   overflow: auto;
   white-space: pre-wrap;
   font-size: 12px;
+}
+
+.pending-output {
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.change-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.change-actions button {
+  padding: 4px 7px;
+  font-size: 11px;
+}
+
+.changes-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.changes-summary h3,
+.change-header h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.changes-summary p,
+.change-header p {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.change-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--vscode-input-border);
+  padding: 10px 0;
+}
+
+.change-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.change-pill,
+.change-status {
+  border: 1px solid var(--vscode-input-border);
+  padding: 2px 6px;
+  text-transform: uppercase;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.change-pill.create,
+.change-status.approved {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.change-pill.modify,
+.change-status.pending {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.change-pill.delete,
+.change-status.invalid {
+  color: var(--vscode-errorForeground);
+}
+
+.change-status.rejected {
+  color: var(--vscode-descriptionForeground);
+}
+
+.warning {
+  margin: 0;
+  color: var(--vscode-errorForeground);
+  font-size: 12px;
+}
+
+.diff-block {
+  max-height: 260px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre;
+  font-size: 11px;
+  line-height: 1.35;
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
 }

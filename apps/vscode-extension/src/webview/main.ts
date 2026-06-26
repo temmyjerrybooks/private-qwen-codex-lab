@@ -11,10 +11,16 @@ const planOutputEl = document.getElementById("planOutput");
 const taskInputEl = document.getElementById("taskInput") as HTMLTextAreaElement | null;
 const inspectButton = document.getElementById("inspectButton");
 const planButton = document.getElementById("planButton");
+const generateButton = document.getElementById("generateButton");
 const providerRefreshButton = document.getElementById("providerRefreshButton");
 const providerStatusEl = document.getElementById("providerStatus");
 const permissionRefreshButton = document.getElementById("permissionRefreshButton");
 const permissionStatusEl = document.getElementById("permissionStatus");
+const pendingChangesOutputEl = document.getElementById("pendingChangesOutput");
+const approveAllButton = document.getElementById("approveAllButton");
+const rejectAllButton = document.getElementById("rejectAllButton");
+const regenerateButton = document.getElementById("regenerateButton");
+const clearPendingButton = document.getElementById("clearPendingButton");
 
 inspectButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "inspectWorkspace" });
@@ -24,12 +30,48 @@ planButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "planTask", task: taskInputEl?.value ?? "" });
 });
 
+generateButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "generateProposedChanges", task: taskInputEl?.value ?? "" });
+});
+
 providerRefreshButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "refreshProviderStatus" });
 });
 
 permissionRefreshButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "refreshPermissionStatus" });
+});
+
+approveAllButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "approveAllPendingChanges" });
+});
+
+rejectAllButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "rejectAllPendingChanges" });
+});
+
+regenerateButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "generateProposedChanges", task: taskInputEl?.value ?? "" });
+});
+
+clearPendingButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "clearPendingChanges" });
+});
+
+pendingChangesOutputEl?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return;
+  }
+  const action = target.dataset.action;
+  const changeId = target.dataset.changeId;
+  if (!action || !changeId) {
+    return;
+  }
+  vscode.postMessage({
+    type: action === "approve" ? "approvePendingChange" : "rejectPendingChange",
+    changeId
+  });
 });
 
 window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
@@ -63,16 +105,22 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
   if (message.type === "permissionStatus" && permissionStatusEl) {
     permissionStatusEl.innerHTML = renderPermissionStatus(message.state, message.error);
   }
+
+  if (message.type === "pendingChanges" && pendingChangesOutputEl) {
+    pendingChangesOutputEl.classList.toggle("empty", !message.changeSet);
+    pendingChangesOutputEl.innerHTML = renderPendingChanges(message.changeSet);
+  }
 });
 
 interface WebviewResponse {
-  type: "state" | "plan" | "providerStatus" | "permissionStatus";
+  type: "state" | "plan" | "providerStatus" | "permissionStatus" | "pendingChanges";
   status?: string;
   body?: unknown;
   plan?: PlanTaskResultMessage | string;
   reports?: ProviderStatusReport[];
   state?: PermissionState;
   error?: string;
+  changeSet?: PendingChangeSetMessage;
 }
 
 interface PlanTaskResultMessage {
@@ -165,6 +213,34 @@ interface PermissionState {
   };
   source: string;
   warning?: string;
+}
+
+interface PendingChangeSetMessage {
+  id: string;
+  task: string;
+  summary: string;
+  generatedAt: string;
+  provider: {
+    label: string;
+    model: string;
+  };
+  changes: PendingFileChangeMessage[];
+  commandsToRunLater: Array<{
+    command: string;
+    reason: string;
+  }>;
+  risks: string[];
+}
+
+interface PendingFileChangeMessage {
+  id: string;
+  path: string;
+  action: "create" | "modify" | "delete";
+  reason: string;
+  status: "pending" | "approved" | "rejected" | "invalid";
+  diff: string;
+  warning?: string;
+  invalidReason?: string;
 }
 
 function renderProviderStatus(reports: ProviderStatusReport[]): string {
@@ -307,6 +383,69 @@ function renderPlan(plan: PlanTaskResultMessage | string | undefined): string {
         <pre class="plan-markdown">${escapeHtml(plan.modelPlan)}</pre>
       </details>
     </article>`;
+}
+
+function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): string {
+  if (!changeSet) {
+    return '<div class="empty">No pending changes.</div>';
+  }
+
+  const counts = countPendingStatuses(changeSet.changes);
+  const files = changeSet.changes
+    .map((change) => `
+      <article class="change-card ${change.status}">
+        <header class="change-header">
+          <div>
+            <h3>${escapeHtml(change.path)}</h3>
+            <p>${escapeHtml(change.reason)}</p>
+          </div>
+          <span class="change-pill ${change.action}">${escapeHtml(change.action)}</span>
+          <span class="change-status ${change.status}">${escapeHtml(change.status)}</span>
+        </header>
+        ${change.warning ? `<p class="warning">${escapeHtml(change.warning)}</p>` : ""}
+        ${change.invalidReason ? `<p class="warning">${escapeHtml(change.invalidReason)}</p>` : ""}
+        <pre class="diff-block">${escapeHtml(change.diff || "No diff available.")}</pre>
+        <div class="actions">
+          <button data-action="approve" data-change-id="${escapeHtml(change.id)}" ${change.status === "invalid" ? "disabled" : ""}>Approve File Change</button>
+          <button data-action="reject" data-change-id="${escapeHtml(change.id)}" ${change.status === "invalid" ? "disabled" : ""}>Reject File Change</button>
+        </div>
+      </article>`)
+    .join("");
+
+  const commands = changeSet.commandsToRunLater.length > 0
+    ? `<ul class="plan-list">${changeSet.commandsToRunLater
+        .map((command) => `<li><code>${escapeHtml(command.command)}</code><span>${escapeHtml(command.reason)}</span></li>`)
+        .join("")}</ul>`
+    : '<p class="muted">No commands suggested.</p>';
+  const risks = changeSet.risks.length > 0
+    ? `<ul class="plan-list">${changeSet.risks.map((risk) => `<li>${escapeHtml(risk)}</li>`).join("")}</ul>`
+    : '<p class="muted">No risks reported.</p>';
+
+  return `
+    <section class="changes-summary">
+      <h3>${escapeHtml(changeSet.summary)}</h3>
+      <p>${escapeHtml(changeSet.task)} via ${escapeHtml(changeSet.provider.label)}</p>
+      <p>${counts.pending} pending, ${counts.approved} approved, ${counts.rejected} rejected, ${counts.invalid} invalid</p>
+    </section>
+    ${files}
+    <section class="plan-section">
+      <h4>Commands Suggested For Later</h4>
+      ${commands}
+    </section>
+    <section class="plan-section">
+      <h4>Risks</h4>
+      ${risks}
+    </section>`;
+}
+
+function countPendingStatuses(changes: PendingFileChangeMessage[]): Record<PendingFileChangeMessage["status"], number> {
+  return changes.reduce(
+    (counts, change) => ({
+      ...counts,
+      [change.status]: counts[change.status] + 1
+    }),
+    { pending: 0, approved: 0, rejected: 0, invalid: 0 }
+  );
 }
 
 function parsePlanSections(markdown: string): Map<string, string> {

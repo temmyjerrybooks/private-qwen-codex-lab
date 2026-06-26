@@ -113,4 +113,28 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 6
+
+- Borger can request proposed edits from the model
+- Model response is parsed into structured pending changes
+- Invalid or malformed edit responses fail gracefully
+- Pending changes are shown in the webview
+- Diffs are readable
+- User can approve or reject pending file changes
+- User can approve or reject all valid pending changes
+- User can clear pending changes
+- Secret-like files are blocked
+- Paths outside the workspace are blocked
+- Delete is preview-only
+- Commands suggested by the model are shown but not run
+- Permission checks are used for approval intent
+- Provider routing remains active
+- Budget checks remain active
+- LiteLLM support remains active
+- Workspace context is used
+- Plan Mode still works
+- No actual file writes are performed
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

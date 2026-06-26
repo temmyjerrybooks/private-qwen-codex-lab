@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
+import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
 import { registerFixSelectionCommand } from "./commands/fixSelection";
 import { registerGenerateTestsCommand } from "./commands/generateTests";
+import { registerGenerateProposedChangesCommand } from "./commands/generateProposedChanges";
 import { registerCheckProviderBudgetsCommand } from "./commands/checkProviderBudgets";
 import { registerInspectWorkspaceCommand } from "./commands/inspectWorkspace";
 import { registerManageProvidersCommand } from "./commands/manageProviders";
@@ -11,6 +13,7 @@ import { registerPlanTaskCommand } from "./commands/planTask";
 import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
+import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
 import { registerSwitchProviderCommand } from "./commands/switchProvider";
@@ -43,7 +46,10 @@ export function activate(context: vscode.ExtensionContext): void {
     registerFixSelectionCommand(),
     registerGenerateTestsCommand(),
     registerRefactorSelectionCommand(),
-    registerRunAgentTaskCommand(),
+    registerRunAgentTaskCommand(output, agentPanel),
+    registerGenerateProposedChangesCommand(output, agentPanel),
+    registerShowPendingChangesCommand(output, agentPanel),
+    registerClearPendingChangesCommand(agentPanel),
     registerManageProvidersCommand(context),
     registerCheckProviderBudgetsCommand(context, output),
     registerSwitchProviderCommand(context),

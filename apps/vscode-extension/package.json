@@ -16,6 +16,9 @@
     "onCommand:borger.inspectWorkspace",
     "onCommand:borger.testModelConnection",
     "onCommand:borger.planTask",
+    "onCommand:borger.generateProposedChanges",
+    "onCommand:borger.showPendingChanges",
+    "onCommand:borger.clearPendingChanges",
     "onCommand:borger.manageProviders",
     "onCommand:borger.checkProviderBudgets",
     "onCommand:borger.switchProvider",
@@ -289,6 +292,18 @@
       {
         "command": "borger.runAgentTask",
         "title": "Borger: Run Agent Task"
+      },
+      {
+        "command": "borger.generateProposedChanges",
+        "title": "Borger: Generate Proposed Changes"
+      },
+      {
+        "command": "borger.showPendingChanges",
+        "title": "Borger: Show Pending Changes"
+      },
+      {
+        "command": "borger.clearPendingChanges",
+        "title": "Borger: Clear Pending Changes"
       },
       {
         "command": "borger.showPermissions",

@@ -1,10 +1,21 @@
 import * as vscode from "vscode";
 import { buildWorkspaceContext } from "../agent/contextBuilder";
+import { generateProposedChanges } from "../agent/executor";
+import {
+  clearPendingChanges,
+  getPendingChange,
+  getPendingChanges,
+  markAllPendingChanges,
+  markPendingChange,
+  PendingChangeSet,
+  setPendingChanges
+} from "../agent/pendingChanges";
 import { PlanTaskResult, planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { loadPermissionState } from "../permissions/permissionState";
 import { ProviderRouter } from "../providers/providerRouter";
+import { formatPendingChangesForOutput } from "../ui/diffProvider";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -35,6 +46,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postState("Ready");
     void this.postProviderStatus();
     void this.postPermissionStatus();
+    this.postPendingChanges(getPendingChanges());
   }
 
   async focus(): Promise<void> {
@@ -52,6 +64,21 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
   postPlan(plan: PlanTaskResult | string): void {
     this.view?.webview.postMessage({ type: "plan", plan });
+  }
+
+  postPendingChanges(changeSet: PendingChangeSet | undefined): void {
+    this.view?.webview.postMessage({ type: "pendingChanges", changeSet });
+  }
+
+  async generateProposedChanges(task: string): Promise<void> {
+    this.postState("Generating proposed changes...");
+    const changeSet = await generateProposedChanges(task, this.context);
+    setPendingChanges(changeSet);
+    this.output.show(true);
+    this.output.appendLine(formatPendingChangesForOutput(changeSet));
+    this.postPendingChanges(changeSet);
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
   }
 
   async postProviderStatus(): Promise<void> {
@@ -104,6 +131,48 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       return;
     }
 
+    if (message.type === "generateProposedChanges" && typeof message.task === "string") {
+      try {
+        await this.generateProposedChanges(message.task);
+      } catch (error) {
+        this.postState("Proposed changes failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "showPendingChanges") {
+      this.postPendingChanges(getPendingChanges());
+      return;
+    }
+
+    if (message.type === "clearPendingChanges") {
+      clearPendingChanges();
+      this.postPendingChanges(undefined);
+      return;
+    }
+
+    if (message.type === "approvePendingChange" && typeof message.changeId === "string") {
+      await this.approvePendingChange(message.changeId);
+      return;
+    }
+
+    if (message.type === "rejectPendingChange" && typeof message.changeId === "string") {
+      this.postPendingChanges(markPendingChange(message.changeId, "rejected"));
+      return;
+    }
+
+    if (message.type === "approveAllPendingChanges") {
+      await this.approveAllPendingChanges();
+      return;
+    }
+
+    if (message.type === "rejectAllPendingChanges") {
+      this.postPendingChanges(markAllPendingChanges("rejected"));
+      return;
+    }
+
     if (message.type === "refreshProviderStatus") {
       await this.postProviderStatus();
       return;
@@ -115,6 +184,46 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     }
 
     this.output.appendLine(`Unhandled webview message: ${JSON.stringify(message)}`);
+  }
+
+  private async approvePendingChange(changeId: string): Promise<void> {
+    const change = getPendingChange(changeId);
+    if (!change) {
+      this.postState("Pending change not found");
+      return;
+    }
+
+    const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "apply_patch";
+    const decision = await authorizeAction(action, { filePath: change.path });
+    if (!decision.allowed) {
+      this.postState("Approval blocked", { error: decision.reason });
+      return;
+    }
+
+    this.postPendingChanges(markPendingChange(changeId, "approved"));
+  }
+
+  private async approveAllPendingChanges(): Promise<void> {
+    const changeSet = getPendingChanges();
+    if (!changeSet) {
+      this.postPendingChanges(undefined);
+      return;
+    }
+
+    for (const change of changeSet.changes) {
+      if (change.status === "invalid") {
+        continue;
+      }
+      const action = change.action === "create" ? "create_file" : change.action === "delete" ? "delete_file" : "apply_patch";
+      const decision = await authorizeAction(action, { filePath: change.path });
+      if (!decision.allowed) {
+        this.postState("Approve all blocked", { error: `${change.path}: ${decision.reason}` });
+        this.postPendingChanges(getPendingChanges());
+        return;
+      }
+    }
+
+    this.postPendingChanges(markAllPendingChanges("approved"));
   }
 
   private getHtml(webview: vscode.Webview): string {
@@ -179,12 +288,26 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       <div class="actions">
         <button id="inspectButton">Inspect</button>
         <button id="planButton">Plan</button>
+        <button id="generateButton">Generate Proposed Changes</button>
       </div>
     </section>
 
     <section class="output">
       <h2>Plan</h2>
       <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
+    </section>
+
+    <section class="output">
+      <div class="section-title">
+        <h2>Pending Changes</h2>
+        <div class="change-actions">
+          <button id="approveAllButton">Approve All</button>
+          <button id="rejectAllButton">Reject All</button>
+          <button id="regenerateButton">Regenerate</button>
+          <button id="clearPendingButton">Clear</button>
+        </div>
+      </div>
+      <div id="pendingChangesOutput" class="pending-output empty">No pending changes.</div>
     </section>
   </main>
   <script src="${scriptUri}"></script>
@@ -196,4 +319,5 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 interface WebviewMessage {
   type: string;
   task?: string;
+  changeId?: string;
 }

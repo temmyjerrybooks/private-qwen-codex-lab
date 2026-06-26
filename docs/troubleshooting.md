@@ -57,6 +57,15 @@ http://localhost:4000/v1
 - If the model gives vague output, rerun with a more specific task and inspect the workspace first.
 - If commands appear in the plan, remember they are recommendations only. Phase 5 never runs terminal commands.
 
+## Diff Preview Issues
+
+- If proposed changes fail to parse, the model likely returned malformed JSON. Regenerate with a narrower task.
+- If a pending change is invalid, check whether the path escapes the workspace, targets a secret-like file, or tries to modify a missing file.
+- If a create action is invalid, the file may already exist and should be proposed as `modify`.
+- If approve is blocked, run `Borger: Show Permissions` and confirm the relevant write/apply/delete capability is allowed.
+- If commands are listed under pending changes, they are suggestions for later verification only. Phase 6 never runs them.
+- If generated diffs are too large, reduce the task scope or lower the number of files the model should modify.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

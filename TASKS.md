@@ -81,9 +81,23 @@
 - Keep Plan Mode read-only
 - Preserve permission checks, provider routing, budget checks, LiteLLM support, and Phase 4 context
 
+## Phase 6 - Diff and Patch Preview
+
+- Add strict JSON edit proposal prompt
+- Add model edit response parser and validation
+- Add pending change state
+- Build preview-only file change objects
+- Generate unified diffs for create, modify, and delete proposals
+- Block paths outside the workspace
+- Block secret-like files while allowing `.env.example`
+- Add proposed-change generation through ProviderRouter and LiteLLM
+- Add sidebar pending change review controls
+- Add commands for generate, show, and clear pending changes
+- Keep actual file writing disabled until Phase 7
+- Document proposed changes and preview-only approval behavior
+
 ## Later Phases
 
-- Phase 6: Diff and patch preview
 - Phase 7: Edit mode
 - Phase 8: Terminal execution
 - Phase 9: Fix mode

@@ -31,7 +31,7 @@
 4. Select relevant code in the editor before planning if the task depends on a specific function or component.
 5. Run `Borger: Plan Task`; Borger includes the same context snapshot in the model prompt.
 6. Review ranked relevant files, complexity, risks, assumptions, and recommended next action.
-7. Treat likely verification commands as recommendations only. Phase 5 does not run commands.
+7. Treat likely verification commands as recommendations only. Phase 6 does not run commands.
 
 ## Plan Mode Workflow
 
@@ -40,3 +40,13 @@
 3. Confirm the plan references real files from the workspace context.
 4. Check the complexity badge and risks before approving later edit work.
 5. Use the verification plan as a checklist. Borger does not execute it in Phase 5.
+
+## Diff Preview Workflow
+
+1. Run `Borger: Plan Task` first for a structured approach.
+2. Run `Borger: Generate Proposed Changes` when you want proposed edits.
+3. Review every pending diff in the sidebar.
+4. Approve or reject file changes. Approval only marks review state in Phase 6.
+5. Use `Borger: Show Pending Changes` to print the current pending set to the output channel.
+6. Use `Borger: Clear Pending Changes` before starting a different task.
+7. Do not expect files to change on disk until Phase 7.

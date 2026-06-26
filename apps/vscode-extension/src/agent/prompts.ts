@@ -104,3 +104,61 @@ Yes or No — one-sentence reason.
 
 State the next action the user should approve or take.`;
 }
+
+export function buildEditProposalPrompt(task: string, context: WorkspaceContext): string {
+  const rankedFiles = context.relevantFiles
+    .map((file, index) => `${index + 1}. ${file.path} — ${file.reasons.join("; ")} (score ${file.score})`)
+    .join("\n");
+  const verificationCommands = context.likelyVerificationCommands.map((command) => `- ${command}`).join("\n");
+
+  return `Phase 6 proposed-change preview only.
+Do not claim to edit files.
+Do not run commands.
+Do not commit, push, deploy, use SSH, or perform external actions.
+
+User task:
+${task}
+
+Workspace context:
+${JSON.stringify(context, null, 2)}
+
+Relevant ranked files:
+${rankedFiles || "No local relevant files were ranked."}
+
+Commands that may be useful later, for recommendation only:
+${verificationCommands || "- None detected"}
+
+Return a single strict JSON object. You may wrap it in one \`\`\`json fenced block, but do not include prose outside the JSON.
+
+Required shape:
+{
+  "summary": "Short summary of intended changes",
+  "changes": [
+    {
+      "path": "relative/path/to/file.ts",
+      "action": "create | modify | delete",
+      "reason": "Why this file should change",
+      "content": "Full updated file content for create/modify. Omit or use empty string for delete."
+    }
+  ],
+  "commandsToRunLater": [
+    {
+      "command": "npm run build",
+      "reason": "Verify TypeScript build"
+    }
+  ],
+  "risks": [
+    "Possible risk or unknown"
+  ]
+}
+
+Rules:
+- Use workspace-relative paths only.
+- Use only actions: create, modify, delete.
+- For modify and create, content must be the full proposed file content, not a partial patch.
+- For delete, include a clear reason. Deletes are preview-only in Phase 6.
+- Do not propose changes to .env, private keys, tokens, credential files, or secret-like files.
+- .env.example is allowed if it is genuinely relevant.
+- Do not invent unknown file contents. If you cannot safely produce full file content, return no change for that file and mention the limitation in risks.
+- Prefer small, focused changes that match the existing project style.`;
+}

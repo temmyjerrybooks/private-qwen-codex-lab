@@ -53,7 +53,7 @@ Borger collects a read-only context snapshot with:
 
 Workspace scans respect `.gitignore` where practical and always ignore `node_modules`, `.git`, `dist`, `build`, `.next`, `out`, `coverage`, `.turbo`, `.cache`, `.venv`, and `__pycache__`. Borger skips secret-like files, private keys, token files, and credential files. `.env.example` is read because it is intended as safe documentation.
 
-`Borger: Plan Task` checks `read_workspace`, builds the same workspace context, ranks relevant files, selects an eligible provider through the budget router, and sends the context through LiteLLM. It does not edit files or run terminal commands in Phase 5.
+`Borger: Plan Task` checks `read_workspace`, builds the same workspace context, ranks relevant files, selects an eligible provider through the budget router, and sends the context through LiteLLM. It does not edit files or run terminal commands.
 
 ## Plan Mode
 
@@ -79,12 +79,42 @@ Plan Mode returns a structured plan with:
 
 The sidebar renders the plan as sections with a complexity badge and relevant-file list. The output channel also receives the full model plan plus local metadata.
 
+## Proposed Changes and Diff Preview
+
+Run:
+
+```text
+Borger: Generate Proposed Changes
+```
+
+Or use the sidebar button:
+
+```text
+Generate Proposed Changes
+```
+
+Borger asks the model for a strict JSON edit proposal, parses it, validates each file path, reads original content safely, and shows pending diffs in the sidebar.
+
+Phase 6 supports review state only:
+
+- `Approve File Change` marks one pending change as approved after authorization.
+- `Reject File Change` marks one pending change as rejected.
+- `Approve All` authorizes and marks all valid pending changes as approved.
+- `Reject All` marks all valid pending changes as rejected.
+- `Regenerate` asks the model for a fresh proposal for the current task.
+- `Clear` removes the in-memory pending changes.
+
+No file is written in Phase 6. Terminal execution, GitHub push, SSH, Auto Mode, and real edit application come later.
+
 ## Commands
 
 - `Borger: Open Agent`
 - `Borger: Inspect Workspace`
 - `Borger: Test Model Connection`
 - `Borger: Plan Task`
+- `Borger: Generate Proposed Changes`
+- `Borger: Show Pending Changes`
+- `Borger: Clear Pending Changes`
 - `Borger: Manage Providers`
 - `Borger: Check Provider Budgets`
 - `Borger: Switch Provider`

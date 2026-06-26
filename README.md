@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Later phases add diff preview, edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Later phases add edit mode, terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs before any future apply flow.
 
 ## Quick Start
 
@@ -107,6 +107,20 @@ Phase 5 makes `Borger: Plan Task` return a structured implementation plan before
 
 Plan Mode remains read-only. It checks `read_workspace`, builds safe workspace context, selects an eligible provider through the budget router, and sends the plan prompt through LiteLLM. It does not edit files, run commands, push to GitHub, use SSH, or deploy.
 
+## Diff Preview
+
+Phase 6 adds proposed changes without enabling broad file writing. Use `Borger: Generate Proposed Changes` or the sidebar button to ask the model for structured JSON edits. Borger parses the response, validates paths, blocks secret-like files, reads original files safely, and displays unified diffs in the sidebar.
+
+Pending changes support:
+
+- `create`, `modify`, and preview-only `delete`
+- statuses: `pending`, `approved`, `rejected`, and `invalid`
+- per-file approve/reject
+- approve all, reject all, regenerate, and clear
+- commands suggested for later verification, without running them
+
+Approval in Phase 6 marks a pending change as approved after the permission system authorizes the intent. It does not write files yet. Actual application is reserved for Phase 7.
+
 ## Permission System
 
 Phase 2.7 adds a local capability system for future edit, terminal, git, GitHub, SSH, deploy, and auto-agent workflows.
@@ -140,4 +154,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 3: LiteLLM gateway - implemented
 - Phase 4: Workspace context intelligence - implemented
 - Phase 5: Plan mode upgrade - implemented
-- Phase 6+: Not started
+- Phase 6: Diff and patch preview - implemented
+- Phase 7+: Not started
