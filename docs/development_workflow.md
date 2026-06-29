@@ -31,7 +31,7 @@
 4. Select relevant code in the editor before planning if the task depends on a specific function or component.
 5. Run `Borger: Plan Task`; Borger includes the same context snapshot in the model prompt.
 6. Review ranked relevant files, complexity, risks, assumptions, and recommended next action.
-7. Treat likely verification commands as recommendations only. Phase 7 does not run commands.
+7. Treat likely verification commands as recommendations until you choose to run one through Phase 8 terminal execution.
 
 ## Plan Mode Workflow
 
@@ -60,4 +60,14 @@
 3. Borger checks `apply_patch`, then `create_file` or `write_file`, and logs each authorization decision.
 4. Borger creates `.borger/backups/` snapshots before modifying existing files.
 5. Use `Borger: Revert Last Apply` only for the latest modify backup. Created-file deletion remains disabled.
-6. Run verification commands yourself. Phase 7 does not run terminal commands, git, deploy, SSH, or auto mode.
+6. Run verification commands manually through Borger or your own terminal. Phase 8 still does not run git push workflows, deploy automation, SSH, or auto mode.
+
+## Terminal Execution Workflow
+
+1. Keep `canRunTerminal` enabled only for workspaces where Borger should run local commands.
+2. Use `Borger: Run Terminal Command` or the sidebar Terminal input for a manual command.
+3. Use `Borger: Run Suggested Command` or a suggested-command `Run` button after reviewing pending changes.
+4. Review the confirmation prompt when the command is risky or the active profile requires confirmation.
+5. Check stdout, stderr, exit code, duration, and status in the sidebar or output channel.
+6. Use `Borger: Show Command History` to review commands from the current VS Code session.
+7. Use command output as context for your next request. Phase 9 will automate Fix Mode around these results.

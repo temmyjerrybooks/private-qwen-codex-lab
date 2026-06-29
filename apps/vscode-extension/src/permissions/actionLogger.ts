@@ -15,6 +15,10 @@ export interface ActionLogEntry {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  cwd?: string;
+  exitCode?: number;
+  durationMs?: number;
+  status?: string;
 }
 
 export async function logAction(entry: Omit<ActionLogEntry, "timestamp">): Promise<ActionLogEntry> {

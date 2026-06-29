@@ -5,6 +5,8 @@ import { assertAuthorized, authorizeAction } from "../permissions/authorization"
 import { ProviderRouter } from "../providers/providerRouter";
 import { applyApprovedFileChange, createPendingFileChangePreview } from "../tools/applyPatch";
 import { getLastWorkspaceBackup, revertLastWorkspaceBackup } from "../tools/fileBackups";
+import { runAuthorizedTerminalCommand } from "../tools/runTerminal";
+import { TerminalCommandResult, TerminalExecutionMode } from "../terminal/commandTypes";
 import { buildWorkspaceContext, selectedProviderToSummary } from "./contextBuilder";
 import {
   createPendingChangeSet,
@@ -86,6 +88,13 @@ export async function generateProposedChanges(
 
 export function isExecutorAvailable(): boolean {
   return true;
+}
+
+export async function runControlledTerminalCommand(
+  command: string,
+  mode: TerminalExecutionMode = "captured"
+): Promise<TerminalCommandResult> {
+  return runAuthorizedTerminalCommand(command, { mode });
 }
 
 export interface ApplyPendingChangesResult {

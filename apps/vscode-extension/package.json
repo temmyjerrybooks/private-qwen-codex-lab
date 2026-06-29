@@ -22,6 +22,10 @@
     "onCommand:borger.applyApprovedChanges",
     "onCommand:borger.applyCurrentPendingChange",
     "onCommand:borger.revertLastApply",
+    "onCommand:borger.runTerminalCommand",
+    "onCommand:borger.runSuggestedCommand",
+    "onCommand:borger.showCommandHistory",
+    "onCommand:borger.clearCommandHistory",
     "onCommand:borger.manageProviders",
     "onCommand:borger.checkProviderBudgets",
     "onCommand:borger.switchProvider",
@@ -319,6 +323,22 @@
       {
         "command": "borger.revertLastApply",
         "title": "Borger: Revert Last Apply"
+      },
+      {
+        "command": "borger.runTerminalCommand",
+        "title": "Borger: Run Terminal Command"
+      },
+      {
+        "command": "borger.runSuggestedCommand",
+        "title": "Borger: Run Suggested Command"
+      },
+      {
+        "command": "borger.showCommandHistory",
+        "title": "Borger: Show Command History"
+      },
+      {
+        "command": "borger.clearCommandHistory",
+        "title": "Borger: Clear Command History"
       },
       {
         "command": "borger.showPermissions",

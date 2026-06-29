@@ -24,6 +24,11 @@ const showAppliedButton = document.getElementById("showAppliedButton");
 const revertLastApplyButton = document.getElementById("revertLastApplyButton");
 const regenerateButton = document.getElementById("regenerateButton");
 const clearPendingButton = document.getElementById("clearPendingButton");
+const commandInputEl = document.getElementById("commandInput") as HTMLInputElement | null;
+const runCommandButton = document.getElementById("runCommandButton");
+const showCommandHistoryButton = document.getElementById("showCommandHistoryButton");
+const clearCommandHistoryButton = document.getElementById("clearCommandHistoryButton");
+const commandOutputEl = document.getElementById("commandOutput");
 
 inspectButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "inspectWorkspace" });
@@ -73,11 +78,36 @@ clearPendingButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "clearPendingChanges" });
 });
 
+runCommandButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "runTerminalCommand", command: commandInputEl?.value ?? "", mode: "captured" });
+});
+
+commandInputEl?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    vscode.postMessage({ type: "runTerminalCommand", command: commandInputEl.value, mode: "captured" });
+  }
+});
+
+showCommandHistoryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showCommandHistory" });
+});
+
+clearCommandHistoryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "clearCommandHistory" });
+});
+
 pendingChangesOutputEl?.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
   }
+  const commandAction = target.dataset.commandAction;
+  const command = target.dataset.command;
+  if (commandAction === "runSuggested" && command) {
+    vscode.postMessage({ type: "runTerminalCommand", command, mode: "captured" });
+    return;
+  }
+
   const action = target.dataset.action;
   const changeId = target.dataset.changeId;
   if (!action || !changeId) {
@@ -130,10 +160,15 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     pendingChangesOutputEl.classList.toggle("empty", !message.changeSet);
     pendingChangesOutputEl.innerHTML = renderPendingChanges(message.changeSet);
   }
+
+  if (message.type === "commandHistory" && commandOutputEl) {
+    commandOutputEl.classList.toggle("empty", !message.history || message.history.length === 0);
+    commandOutputEl.innerHTML = renderCommandHistory(message.history ?? []);
+  }
 });
 
 interface WebviewResponse {
-  type: "state" | "plan" | "providerStatus" | "permissionStatus" | "pendingChanges";
+  type: "state" | "plan" | "providerStatus" | "permissionStatus" | "pendingChanges" | "commandHistory";
   status?: string;
   body?: unknown;
   plan?: PlanTaskResultMessage | string;
@@ -141,6 +176,7 @@ interface WebviewResponse {
   state?: PermissionState;
   error?: string;
   changeSet?: PendingChangeSetMessage;
+  history?: TerminalCommandResultMessage[];
 }
 
 interface PlanTaskResultMessage {
@@ -268,6 +304,27 @@ interface PendingFileChangeMessage {
 }
 
 type PendingChangeStatusMessage = "pending" | "approved" | "rejected" | "applied" | "failed" | "invalid";
+
+interface TerminalCommandResultMessage {
+  id: string;
+  command: string;
+  cwd: string;
+  mode: "captured" | "interactive";
+  startedAt: string;
+  endedAt?: string;
+  durationMs?: number;
+  exitCode?: number;
+  stdout: string;
+  stderr: string;
+  status: "pending" | "running" | "succeeded" | "failed" | "blocked" | "cancelled";
+  reason: string;
+  suggestedNextStep?: string;
+  authorizationDecision: {
+    allowed: boolean;
+    requiresConfirmation: boolean;
+    reason: string;
+  };
+}
 
 function renderProviderStatus(reports: ProviderStatusReport[]): string {
   if (reports.length === 0) {
@@ -448,7 +505,13 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
 
   const commands = changeSet.commandsToRunLater.length > 0
     ? `<ul class="plan-list">${changeSet.commandsToRunLater
-        .map((command) => `<li><code>${escapeHtml(command.command)}</code><span>${escapeHtml(command.reason)}</span></li>`)
+        .map(
+          (command) => `<li>
+            <code>${escapeHtml(command.command)}</code>
+            <span>${escapeHtml(command.reason)}</span>
+            <button class="inline-command-button" data-command-action="runSuggested" data-command="${escapeHtml(command.command)}">Run</button>
+          </li>`
+        )
         .join("")}</ul>`
     : '<p class="muted">No commands suggested.</p>';
   const risks = changeSet.risks.length > 0
@@ -470,6 +533,45 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
       <h4>Risks</h4>
       ${risks}
     </section>`;
+}
+
+function renderCommandHistory(history: TerminalCommandResultMessage[]): string {
+  if (history.length === 0) {
+    return '<div class="empty">No terminal commands run this session.</div>';
+  }
+
+  return history
+    .slice(0, 12)
+    .map((result) => {
+      const stdout = result.stdout ? `<pre class="terminal-block stdout">${escapeHtml(truncateOutput(result.stdout))}</pre>` : "";
+      const stderr = result.stderr ? `<pre class="terminal-block stderr">${escapeHtml(truncateOutput(result.stderr))}</pre>` : "";
+      return `
+        <article class="command-card ${result.status}">
+          <header class="command-header">
+            <div>
+              <h3><code>${escapeHtml(result.command)}</code></h3>
+              <p>${escapeHtml(result.cwd)}</p>
+            </div>
+            <span class="change-status ${result.status}">${escapeHtml(result.status)}</span>
+          </header>
+          <dl class="command-meta">
+            <div><dt>Mode</dt><dd>${escapeHtml(result.mode)}</dd></div>
+            <div><dt>Exit</dt><dd>${result.exitCode === undefined ? "unknown" : String(result.exitCode)}</dd></div>
+            <div><dt>Duration</dt><dd>${result.durationMs === undefined ? "unknown" : `${result.durationMs}ms`}</dd></div>
+            <div><dt>Auth</dt><dd>${result.authorizationDecision.allowed ? "allowed" : "blocked"}${result.authorizationDecision.requiresConfirmation ? "; confirmation" : ""}</dd></div>
+          </dl>
+          <p class="${result.status === "failed" || result.status === "blocked" ? "warning" : "muted"}">${escapeHtml(result.reason)}</p>
+          ${result.suggestedNextStep ? `<p class="muted">${escapeHtml(result.suggestedNextStep)}</p>` : ""}
+          ${stdout}
+          ${stderr}
+        </article>`;
+    })
+    .join("");
+}
+
+function truncateOutput(value: string): string {
+  const max = 8000;
+  return value.length > max ? `${value.slice(0, max)}\n\n... output truncated in webview ...` : value;
 }
 
 function countPendingStatuses(changes: PendingFileChangeMessage[]): Record<PendingChangeStatusMessage, number> {

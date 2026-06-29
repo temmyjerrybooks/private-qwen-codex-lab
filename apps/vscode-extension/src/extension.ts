@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { registerApplyApprovedChangesCommand } from "./commands/applyApprovedChanges";
 import { registerApplyCurrentPendingChangeCommand } from "./commands/applyCurrentPendingChange";
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
+import { registerClearCommandHistoryCommand } from "./commands/clearCommandHistory";
 import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
 import { registerFixSelectionCommand } from "./commands/fixSelection";
@@ -16,6 +17,9 @@ import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRevertLastApplyCommand } from "./commands/revertLastApply";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
+import { registerRunSuggestedCommandCommand } from "./commands/runSuggestedCommand";
+import { registerRunTerminalCommandCommand } from "./commands/runTerminalCommand";
+import { registerShowCommandHistoryCommand } from "./commands/showCommandHistory";
 import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
@@ -56,6 +60,10 @@ export function activate(context: vscode.ExtensionContext): void {
     registerApplyApprovedChangesCommand(output, agentPanel),
     registerApplyCurrentPendingChangeCommand(output, agentPanel),
     registerRevertLastApplyCommand(output, agentPanel),
+    registerRunTerminalCommandCommand(output, agentPanel),
+    registerRunSuggestedCommandCommand(output, agentPanel),
+    registerShowCommandHistoryCommand(output, agentPanel),
+    registerClearCommandHistoryCommand(agentPanel),
     registerManageProvidersCommand(context),
     registerCheckProviderBudgetsCommand(context, output),
     registerSwitchProviderCommand(context),

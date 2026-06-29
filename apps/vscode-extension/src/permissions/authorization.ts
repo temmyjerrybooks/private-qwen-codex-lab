@@ -21,6 +21,7 @@ export interface AuthorizationContext {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  cwd?: string;
 }
 
 export interface AuthorizationDecision {
@@ -32,6 +33,7 @@ export interface AuthorizationDecision {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  cwd?: string;
 }
 
 export async function authorizeAction(
@@ -62,7 +64,8 @@ export function evaluateAuthorization(
     profile,
     command: context.command,
     filePath: context.filePath,
-    sshHost: context.sshHost
+    sshHost: context.sshHost,
+    cwd: context.cwd
   };
 
   switch (actionType) {
@@ -153,7 +156,8 @@ function evaluateTerminalAuthorization(state: PermissionState, context: Authoriz
     profile,
     command: context.command,
     filePath: context.filePath,
-    sshHost: context.sshHost
+    sshHost: context.sshHost,
+    cwd: context.cwd
   };
 
   if (!state.capabilities.canRunTerminal) {

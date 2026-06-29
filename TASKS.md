@@ -112,9 +112,26 @@
 - Keep terminal execution, git push, SSH, deploy, and auto mode out of scope
 - Document safe apply behavior and troubleshooting
 
+## Phase 8 - Controlled Terminal Execution
+
+- Add typed terminal command result objects
+- Add current-session command history
+- Add captured command runner using workspace-root cwd
+- Add optional interactive VS Code terminal mode
+- Authorize every command through `run_terminal`
+- Use command policy allowlist, confirmation patterns, and blocked patterns
+- Ask for confirmation when policy or configuration requires it
+- Capture stdout, stderr, exit code, start/end time, and duration where practical
+- Log command authorization, started, completed, failed, blocked, and cancelled events
+- Add sidebar Terminal section with command input and command history
+- Add manual run buttons for commands suggested by proposed changes
+- Add commands for run terminal command, run suggested command, show command history, and clear command history
+- Keep command execution manual; applying edits does not run commands automatically
+- Keep Fix Mode, Auto Mode, GitHub workflow, SSH, and deploy automation out of scope
+- Document terminal behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 8: Terminal execution
 - Phase 9: Fix mode
 - Phase 10: Auto mode
 - Phase 11: GitHub workflow

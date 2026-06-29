@@ -4,6 +4,7 @@ import {
   applyApprovedPendingChanges,
   applyPendingChangeById,
   generateProposedChanges,
+  runControlledTerminalCommand,
   revertLastAppliedChange
 } from "../agent/executor";
 import {
@@ -20,6 +21,9 @@ import { getBorgerConfig } from "../config";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
 import { loadPermissionState } from "../permissions/permissionState";
 import { ProviderRouter } from "../providers/providerRouter";
+import { clearCommandHistory, getCommandHistory } from "../terminal/commandHistory";
+import { TerminalExecutionMode } from "../terminal/commandTypes";
+import { formatCommandResultForOutput, formatCommandHistoryForOutput } from "../ui/commandOutputFormatter";
 import { formatPendingChangesForOutput } from "../ui/diffProvider";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
@@ -52,6 +56,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     void this.postProviderStatus();
     void this.postPermissionStatus();
     this.postPendingChanges(getPendingChanges());
+    this.postCommandHistory();
   }
 
   async focus(): Promise<void> {
@@ -73,6 +78,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
   postPendingChanges(changeSet: PendingChangeSet | undefined): void {
     this.view?.webview.postMessage({ type: "pendingChanges", changeSet });
+  }
+
+  postCommandHistory(): void {
+    this.view?.webview.postMessage({ type: "commandHistory", history: getCommandHistory() });
   }
 
   async generateProposedChanges(task: string): Promise<void> {
@@ -132,6 +141,28 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       this.postState("Revert last apply failed", { error: message });
       throw error;
     }
+  }
+
+  async runTerminalCommand(command: string, mode: TerminalExecutionMode = "captured"): Promise<void> {
+    const trimmedCommand = command.trim();
+    if (!trimmedCommand) {
+      this.postState("Enter a command before running terminal execution.");
+      return;
+    }
+
+    this.postState("Running terminal command...");
+    const result = await runControlledTerminalCommand(trimmedCommand, mode);
+    this.output.show(true);
+    this.output.appendLine(formatCommandResultForOutput(result));
+    this.postCommandHistory();
+    this.postState(`Command ${result.status}`, {
+      command: result.command,
+      status: result.status,
+      exitCode: result.exitCode,
+      durationMs: result.durationMs,
+      reason: result.reason
+    });
+    await this.postPermissionStatus();
   }
 
   async postProviderStatus(): Promise<void> {
@@ -197,6 +228,32 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     if (message.type === "showPendingChanges") {
       this.postPendingChanges(getPendingChanges());
+      return;
+    }
+
+    if (message.type === "runTerminalCommand" && typeof message.command === "string") {
+      try {
+        await this.runTerminalCommand(message.command, normalizeTerminalMode(message.mode));
+      } catch (error) {
+        this.postState("Terminal command failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        this.postCommandHistory();
+      }
+      return;
+    }
+
+    if (message.type === "showCommandHistory") {
+      this.postCommandHistory();
+      this.output.show(true);
+      this.output.appendLine(formatCommandHistoryForOutput(getCommandHistory()));
+      return;
+    }
+
+    if (message.type === "clearCommandHistory") {
+      clearCommandHistory();
+      this.postCommandHistory();
+      this.postState("Command history cleared");
       return;
     }
 
@@ -398,6 +455,21 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       </div>
       <div id="pendingChangesOutput" class="pending-output empty">No pending changes.</div>
     </section>
+
+    <section class="output">
+      <div class="section-title">
+        <h2>Terminal</h2>
+        <div class="change-actions">
+          <button id="showCommandHistoryButton">Show History</button>
+          <button id="clearCommandHistoryButton">Clear History</button>
+        </div>
+      </div>
+      <div class="terminal-input-row">
+        <input id="commandInput" type="text" placeholder="npm run build">
+        <button id="runCommandButton">Run</button>
+      </div>
+      <div id="commandOutput" class="command-output empty">No terminal commands run this session.</div>
+    </section>
   </main>
   <script src="${scriptUri}"></script>
 </body>
@@ -409,4 +481,10 @@ interface WebviewMessage {
   type: string;
   task?: string;
   changeId?: string;
+  command?: string;
+  mode?: string;
+}
+
+function normalizeTerminalMode(value: string | undefined): TerminalExecutionMode {
+  return value === "interactive" ? "interactive" : "captured";
 }

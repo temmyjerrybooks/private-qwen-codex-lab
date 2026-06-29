@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Later phases add terminal execution, fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Later phases add fix mode, auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical.
 
 ## Quick Start
 
@@ -129,7 +129,27 @@ Before a modify overwrite, Borger writes a local backup snapshot under:
 
 That directory is ignored by git. `Borger: Revert Last Apply` can restore the latest modify backup. Automatic deletion of created files remains disabled in Phase 7, so reverting a create backup is intentionally refused.
 
-Phase 8 is expected to add controlled terminal execution. Phase 7 does not run verification commands, use git, push to GitHub, deploy, SSH, or start auto mode.
+## Controlled Terminal Execution
+
+Phase 8 adds manually triggered terminal execution through:
+
+- `Borger: Run Terminal Command`
+- `Borger: Run Suggested Command`
+- `Borger: Show Command History`
+- `Borger: Clear Command History`
+- the Terminal section in the Borger sidebar
+
+Commands run from the workspace root by default. Captured mode is the default and records stdout, stderr, exit code, start/end time, duration, status, authorization decision, and suggested next step. Interactive mode can open a VS Code terminal and send a command, but output capture is limited.
+
+Before running any command, Borger checks `run_terminal`, classifies the command through the local command policy, asks for confirmation when required, and logs authorization plus command lifecycle events to `.borger/action-log.jsonl`.
+
+Allowed examples when terminal permission is enabled include `npm run build`, `npm test`, `npm run lint`, `npm run typecheck`, `python -m py_compile`, `git status`, `git diff`, and `modal app list`.
+
+Riskier commands such as `npm install`, `pip install`, `docker compose up`, `docker compose down`, `modal deploy`, `modal app stop`, `git commit`, commands containing `--force`, and migration commands require confirmation or stronger permissions. Destructive commands such as `rm -rf`, `git reset --hard`, `git push --force`, `shutdown`, `del /s`, recursive forced `Remove-Item`, and commands attempting to delete `.git` or escape the workspace are blocked by default.
+
+Suggested commands from proposed changes are displayed as manual run buttons. Applying file changes never automatically runs commands in Phase 8.
+
+Phase 9 is expected to add Fix Mode that can use captured command output to propose fixes. The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
 
 ## Permission System
 
@@ -166,4 +186,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 5: Plan mode upgrade - implemented
 - Phase 6: Diff and patch preview - implemented
 - Phase 7: Real edit mode and safe file application - implemented
-- Phase 8+: Not started
+- Phase 8: Controlled terminal execution - implemented
+- Phase 9+: Not started

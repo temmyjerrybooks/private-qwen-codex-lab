@@ -11,24 +11,60 @@ export interface CommandPolicyResult {
 
 const destructivePatterns = [
   "rm -rf",
+  "rm -fr",
   "git reset --hard",
   "git push --force",
+  "git push -f",
   "format",
   "shutdown",
   "del /s",
-  "remove-item -recurse -force"
+  "erase /s",
+  "rmdir /s",
+  "rd /s",
+  "remove-item -recurse -force",
+  "remove-item -force -recurse",
+  "remove-item .git -recurse",
+  "remove-item .git -force",
+  "rm -rf .git",
+  "rm -rf .",
+  "rm -rf *",
+  "del /s .git",
+  "rmdir /s .git",
+  "rd /s .git"
 ];
 
 const confirmationPatterns = [
   "npm install",
   "pnpm install",
+  "pnpm add",
   "yarn add",
+  "yarn install",
   "pip install",
+  "pip3 install",
   "git commit",
   "git push",
   "modal deploy",
+  "modal app stop",
   "docker compose up",
-  "docker run"
+  "docker compose down",
+  "docker run",
+  "prisma migrate",
+  "knex migrate",
+  "sequelize db:migrate",
+  "db:migrate",
+  "migrate",
+  "--force"
+];
+
+const workspaceEscapePatterns = [
+  "cd ..",
+  "cd /",
+  "cd \\",
+  "pushd ..",
+  "set-location ..",
+  "sl ..",
+  "--prefix ..",
+  "--cwd .."
 ];
 
 export function classifyCommand(command: string, state: PermissionState): CommandPolicyResult {
@@ -52,7 +88,32 @@ export function classifyCommand(command: string, state: PermissionState): Comman
     };
   }
 
+  const escapesWorkspace = workspaceEscapePatterns.find((pattern) => normalized.includes(pattern));
+  if (escapesWorkspace) {
+    return {
+      classification: "blocked",
+      reason: `Command attempts to change execution outside the workspace: ${escapesWorkspace}`,
+      matchedPattern: escapesWorkspace,
+      commandName: getCommandName(normalized)
+    };
+  }
+
   const commandName = getCommandName(normalized);
+  if (commandName === "git") {
+    const gitPolicy = classifyGitCommand(normalized, state);
+    if (gitPolicy) {
+      return gitPolicy;
+    }
+  }
+
+  if (commandName === "modal" && normalized.startsWith("modal deploy") && !state.capabilities.canDeploy) {
+    return {
+      classification: "blocked",
+      reason: "Current permission profile cannot deploy.",
+      commandName
+    };
+  }
+
   if (!state.allowedCommands.map((value) => value.toLowerCase()).includes(commandName)) {
     return {
       classification: "needs_confirmation",
@@ -96,5 +157,55 @@ function getCommandName(command: string): string {
   if (first === "python3") {
     return "python";
   }
+  if (first === "pip3") {
+    return "pip";
+  }
   return first.replace(/\.(cmd|exe|ps1)$/i, "");
+}
+
+function classifyGitCommand(command: string, state: PermissionState): CommandPolicyResult | undefined {
+  if (/^git\s+(status|diff|branch\s+--show-current)\b/.test(command)) {
+    if (!state.capabilities.canUseGit && !state.capabilities.canReadWorkspace) {
+      return {
+        classification: "blocked",
+        reason: "Current permission profile cannot inspect git state.",
+        commandName: "git"
+      };
+    }
+    return undefined;
+  }
+
+  if (/^git\s+commit\b/.test(command)) {
+    if (!state.capabilities.canUseGit || !state.capabilities.canWriteWorkspace) {
+      return {
+        classification: "blocked",
+        reason: "Current permission profile cannot perform git commits.",
+        commandName: "git"
+      };
+    }
+    return {
+      classification: "needs_confirmation",
+      reason: "Git commit requires confirmation and is not part of the dedicated GitHub workflow yet.",
+      matchedPattern: "git commit",
+      commandName: "git"
+    };
+  }
+
+  if (/^git\s+push\b/.test(command)) {
+    if (!state.capabilities.canPushGitHub) {
+      return {
+        classification: "blocked",
+        reason: "Current permission profile cannot push to GitHub.",
+        commandName: "git"
+      };
+    }
+    return {
+      classification: "needs_confirmation",
+      reason: "Git push requires confirmation; the dedicated GitHub workflow comes in a later phase.",
+      matchedPattern: "git push",
+      commandName: "git"
+    };
+  }
+
+  return undefined;
 }

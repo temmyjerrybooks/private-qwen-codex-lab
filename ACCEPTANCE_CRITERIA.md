@@ -166,4 +166,33 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 8
+
+- Borger can run authorized local terminal commands
+- Commands run from the workspace root by default
+- Captured mode records stdout, stderr, exit code, start/end time, and duration
+- Interactive mode can send a command to a VS Code terminal with limited capture
+- Command policy blocks dangerous commands
+- Confirmation is required for risky commands or conservative profiles
+- Command status is shown as running, succeeded, failed, blocked, or cancelled
+- Command results are displayed in the Borger sidebar
+- Command history exists for the current VS Code session
+- Suggested commands from proposed changes can be run manually
+- Applying approved edits does not automatically run commands
+- `run_terminal` authorization checks are used before execution
+- Command authorization and lifecycle events are logged
+- Existing Plan Mode still works
+- Existing proposed change generation still works
+- Existing approved file application still works
+- Provider routing remains active
+- Budget checks remain active
+- LiteLLM support remains active
+- Fix Mode is not implemented
+- Auto Mode is not implemented
+- GitHub push workflow is not implemented
+- SSH and remote ops are not implemented
+- Deployment automation is not implemented
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

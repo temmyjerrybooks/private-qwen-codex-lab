@@ -11,7 +11,8 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input {
   font: inherit;
 }
 
@@ -117,6 +118,14 @@ textarea {
   background: var(--vscode-input-background);
   border: 1px solid var(--vscode-input-border);
   padding: 8px;
+}
+
+input {
+  min-width: 0;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 7px 8px;
 }
 
 .actions {
@@ -305,6 +314,98 @@ code {
   padding: 8px;
 }
 
+.command-output {
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.terminal-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.command-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--vscode-input-border);
+  padding: 10px 0;
+}
+
+.command-card:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.command-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.command-header h3 {
+  margin: 0;
+  font-size: 12px;
+}
+
+.command-header p {
+  margin-top: 3px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.command-meta {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.command-meta div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.command-meta dt {
+  color: var(--vscode-descriptionForeground);
+}
+
+.command-meta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.terminal-block {
+  max-height: 220px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+  line-height: 1.35;
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.terminal-block.stderr {
+  border-color: var(--vscode-errorForeground);
+}
+
+.inline-command-button {
+  margin-top: 4px;
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
 .change-actions {
   display: flex;
   flex-wrap: wrap;
@@ -380,6 +481,19 @@ code {
 
 .change-status.rejected {
   color: var(--vscode-descriptionForeground);
+}
+
+.change-status.succeeded {
+  color: var(--vscode-testing-iconPassed);
+}
+
+.change-status.running,
+.change-status.cancelled {
+  color: var(--vscode-editorWarning-foreground);
+}
+
+.change-status.blocked {
+  color: var(--vscode-errorForeground);
 }
 
 .warning {

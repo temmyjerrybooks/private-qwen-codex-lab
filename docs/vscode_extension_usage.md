@@ -116,9 +116,73 @@ Before modifying an existing file, Borger stores a backup snapshot in:
 .borger/backups/
 ```
 
-The backup folder is ignored by git. Created-file reverts are intentionally disabled because Phase 7 does not perform automatic file deletion. Terminal execution, GitHub push, SSH, deployment, and Auto Mode come later.
+The backup folder is ignored by git. Created-file reverts are intentionally disabled because Phase 7 does not perform automatic file deletion.
 
-Phase 8 will add controlled terminal execution. Until then, verification commands shown by plans or pending changes are recommendations for the user to run manually.
+## Terminal Execution
+
+Phase 8 adds controlled local terminal execution. Use the Terminal section in the Borger sidebar or run:
+
+```text
+Borger: Run Terminal Command
+```
+
+Borger runs commands from the workspace root. Captured mode is the default and captures stdout, stderr, exit code, start/end time, duration, command status, and authorization details. Interactive mode opens a VS Code terminal and sends the command, but output capture may be limited.
+
+Suggested commands from pending proposed changes appear under `Commands Suggested For Later`. Click `Run` on a suggested command or use:
+
+```text
+Borger: Run Suggested Command
+```
+
+Running a suggested command is always manual. Applying approved edits never runs commands automatically.
+
+Use these commands for history:
+
+```text
+Borger: Show Command History
+Borger: Clear Command History
+```
+
+Command history is kept in memory for the current VS Code session. Command authorization decisions and lifecycle events are logged to `.borger/action-log.jsonl`.
+
+Examples that can run when terminal permission is enabled:
+
+- `npm run build`
+- `npm test`
+- `npm run lint`
+- `npm run typecheck`
+- `python -m py_compile path/to/file.py`
+- `git status`
+- `git diff`
+- `modal app list`
+
+Examples that require confirmation or stronger permissions:
+
+- `npm install`
+- `pnpm install`
+- `yarn install`
+- `pip install`
+- `docker compose up`
+- `docker compose down`
+- `modal deploy`
+- `modal app stop`
+- `git commit`
+- `git push`
+- migration commands
+- commands containing `--force`
+
+Examples blocked by default:
+
+- `rm -rf`
+- `git reset --hard`
+- `git push --force`
+- `shutdown`
+- `del /s`
+- recursive forced `Remove-Item`
+- commands attempting to delete `.git`
+- commands attempting to escape the workspace root
+
+Phase 9 will add Fix Mode that can use captured command output to propose repairs. The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
 
 ## Commands
 
@@ -132,6 +196,10 @@ Phase 8 will add controlled terminal execution. Until then, verification command
 - `Borger: Apply Approved Changes`
 - `Borger: Apply Current Pending Change`
 - `Borger: Revert Last Apply`
+- `Borger: Run Terminal Command`
+- `Borger: Run Suggested Command`
+- `Borger: Show Command History`
+- `Borger: Clear Command History`
 - `Borger: Manage Providers`
 - `Borger: Check Provider Budgets`
 - `Borger: Switch Provider`

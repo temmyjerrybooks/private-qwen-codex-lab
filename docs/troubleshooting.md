@@ -55,7 +55,7 @@ http://localhost:4000/v1
 - If Plan Task reports no provider, run `Borger: Show Provider Status` and check budget thresholds or paused providers.
 - If relevant files look weak, open or select the file related to the task before planning.
 - If the model gives vague output, rerun with a more specific task and inspect the workspace first.
-- If commands appear in the plan, remember they are recommendations only. Phase 5 never runs terminal commands.
+- If commands appear in the plan, remember they are recommendations only until you manually run one through Phase 8 terminal execution.
 
 ## Diff Preview and Safe Apply Issues
 
@@ -69,8 +69,20 @@ http://localhost:4000/v1
 - If `Borger: Revert Last Apply` refuses a backup, the last backup may be for a created file. Phase 7 does not delete files automatically.
 - If a file is blocked as secret-like, rename or handle it manually. `.env.example` is allowed, but `.env`, private keys, token files, and credential files are blocked.
 - If content is blocked as binary, Borger detected null bytes or binary-looking control characters and will not write it.
-- If commands are listed under pending changes, they are suggestions for later verification only. Phase 7 never runs them.
+- If commands are listed under pending changes, they are suggestions for later verification only. Phase 8 lets you run them manually; Borger never runs them automatically after apply.
 - If generated diffs are too large, reduce the task scope or lower the number of files the model should modify.
+
+## Terminal Execution Issues
+
+- If a command is blocked, run `Borger: Show Permissions` and check `canRunTerminal`, `allowedCommands`, and `blockedCommandPatterns`.
+- If Borger asks for confirmation on safe commands, check `borger.confirmBeforeTerminal` and the active permission profile. `edit_with_review` is intentionally conservative.
+- If a command exits nonzero, inspect stderr/stdout in the Terminal section or `Borger: Show Command History`.
+- If output is missing in interactive mode, rerun in captured mode. Interactive mode sends the command to a VS Code terminal and cannot reliably capture output.
+- If a command appears to run in the wrong folder, confirm the open VS Code folder is the intended workspace root. Phase 8 always uses the open workspace root as cwd.
+- If a command using `cd ..`, `.git` deletion, `rm -rf`, forced git push, shutdown, or recursive forced deletion is blocked, that is expected default policy.
+- If `git push` is blocked, use a stronger permission profile only when explicitly intended. The dedicated GitHub workflow comes later.
+- If command history is empty after reloading VS Code, that is expected. Phase 8 command history is in-memory for the current session.
+- Command authorization and lifecycle events are logged to `.borger/action-log.jsonl`.
 
 ## Modal and Hugging Face Issues
 
