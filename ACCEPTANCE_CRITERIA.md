@@ -162,7 +162,7 @@
 - Permission checks remain active
 - LiteLLM support remains active
 - Workspace context and plan mode still work
-- Terminal execution, GitHub push, SSH, deploy, and auto mode are not implemented
+- Terminal execution, GitHub push, SSH, deploy, and auto mode were out of Phase 7 scope
 - `npm run compile` passes
 - `npm run check-types` passes
 
@@ -188,7 +188,7 @@
 - Budget checks remain active
 - LiteLLM support remains active
 - Fix Mode is not implemented
-- Auto Mode is not implemented
+- Auto Mode was out of Phase 8 scope
 - GitHub push workflow is not implemented
 - SSH and remote ops are not implemented
 - Deployment automation is not implemented
@@ -222,7 +222,46 @@
 - Existing proposed change generation still works
 - Existing approved file application still works
 - Existing controlled terminal execution still works
-- Auto Mode is not implemented
+- Auto Mode was out of Phase 9 scope
+- GitHub push workflow is not implemented
+- SSH and remote ops are not implemented
+- Deployment automation is not implemented
+- `npm run compile` passes
+- `npm run check-types` passes
+
+## Phase 10
+
+- `Borger: Run Auto Mode` exists
+- `Borger: Stop Auto Mode` exists
+- `Borger: Show Auto Mode Status` exists
+- Auto Mode is disabled by default and must be enabled deliberately
+- Auto Mode asks for confirmation before starting
+- Auto Mode has controlled loop state
+- Auto Mode respects the configured max loop limit
+- Auto Mode can be cancelled
+- Auto Mode logs lifecycle events
+- Auto Mode uses workspace context through Plan Mode and proposal generation
+- Auto Mode can generate proposed changes
+- Auto Mode uses the existing pending diff preview
+- Auto Mode uses the existing safe apply flow
+- Auto Mode never applies rejected, invalid, or unapproved changes
+- Auto Mode can run allowed verification commands only through terminal authorization
+- Auto Mode can require confirmation before verification commands
+- Auto Mode can use Fix Mode when diagnostics or command failures exist
+- Auto Mode stops safely on blocked actions
+- Auto Mode stops on secret-like file proposals when configured
+- Auto Mode stops on destructive-looking verification commands when configured
+- UI shows current state, loop, timeline, pending summary, command summary, diagnostics, fix summary, and final summary
+- Final summary includes task, start/end time, loops, files changed, commands run, errors fixed, remaining errors, skipped/blocked actions, status, and next action
+- Existing Plan Mode still works
+- Existing proposed change generation still works
+- Existing safe edit application still works
+- Existing terminal command execution still works
+- Existing Fix Mode still works
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
 - GitHub push workflow is not implemented
 - SSH and remote ops are not implemented
 - Deployment automation is not implemented

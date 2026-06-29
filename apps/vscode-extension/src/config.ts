@@ -10,6 +10,15 @@ export interface BorgerConfig {
   maxFileSizeKb: number;
   confirmBeforeApply: boolean;
   confirmBeforeTerminal: boolean;
+  autoMode: {
+    enabled: boolean;
+    maxLoops: number;
+    requireApprovalForEdits: boolean;
+    requireApprovalForCommands: boolean;
+    allowedVerificationCommands: string[];
+    stopOnDestructiveCommand: boolean;
+    stopOnSecretFile: boolean;
+  };
   providerRouting: {
     enabled: boolean;
     mode: "budget_aware";
@@ -39,6 +48,34 @@ export function getBorgerConfig(): BorgerConfig {
     maxFileSizeKb: config.get("maxFileSizeKb", 300),
     confirmBeforeApply: config.get("confirmBeforeApply", true),
     confirmBeforeTerminal: config.get("confirmBeforeTerminal", true),
+    autoMode: {
+      enabled: getBooleanEnv("BORGER_AUTO_MODE_ENABLED", config.get("autoModeEnabled", false)),
+      maxLoops: getNumberEnv("BORGER_AUTO_MAX_LOOPS", config.get("autoMaxLoops", 3)),
+      requireApprovalForEdits: getBooleanEnv(
+        "BORGER_AUTO_REQUIRE_APPROVAL_FOR_EDITS",
+        config.get("autoRequireApprovalForEdits", true)
+      ),
+      requireApprovalForCommands: getBooleanEnv(
+        "BORGER_AUTO_REQUIRE_APPROVAL_FOR_COMMANDS",
+        config.get("autoRequireApprovalForCommands", true)
+      ),
+      allowedVerificationCommands: getListEnv(
+        "BORGER_AUTO_ALLOWED_VERIFICATION_COMMANDS",
+        config.get("autoAllowedVerificationCommands", [
+          "npm.cmd run check-types",
+          "npm.cmd run compile",
+          "npm test",
+          "npm run lint",
+          "pnpm test",
+          "python -m py_compile"
+        ])
+      ),
+      stopOnDestructiveCommand: getBooleanEnv(
+        "BORGER_AUTO_STOP_ON_DESTRUCTIVE_COMMAND",
+        config.get("autoStopOnDestructiveCommand", true)
+      ),
+      stopOnSecretFile: getBooleanEnv("BORGER_AUTO_STOP_ON_SECRET_FILE", config.get("autoStopOnSecretFile", true))
+    },
     providerRouting: {
       enabled: config.get("providerRoutingEnabled", true),
       mode: config.get<"budget_aware">("providerRoutingMode", "budget_aware"),
@@ -55,6 +92,34 @@ export function getBorgerConfig(): BorgerConfig {
       h200PairHourlyCostUsd: config.get("modalH200PairHourlyCostUsd", 9.08)
     }
   };
+}
+
+function getBooleanEnv(name: string, fallback: boolean): boolean {
+  const value = process.env[name];
+  if (value === undefined || value.trim() === "") {
+    return fallback;
+  }
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
+function getNumberEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (value === undefined || value.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getListEnv(name: string, fallback: string[]): string[] {
+  const value = process.env[name];
+  if (value === undefined || value.trim() === "") {
+    return fallback;
+  }
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
 export async function getApiKey(context: vscode.ExtensionContext): Promise<string | undefined> {

@@ -8,6 +8,10 @@ const statusEl = document.getElementById("status");
 const workspaceEl = document.getElementById("workspace");
 const contextStatusEl = document.getElementById("contextStatus");
 const planOutputEl = document.getElementById("planOutput");
+const autoModeOutputEl = document.getElementById("autoModeOutput");
+const runAutoModeButton = document.getElementById("runAutoModeButton");
+const stopAutoModeButton = document.getElementById("stopAutoModeButton");
+const autoRefreshButton = document.getElementById("autoRefreshButton");
 const fixStatusEl = document.getElementById("fixStatus");
 const fixOutputEl = document.getElementById("fixOutput");
 const fixRefreshButton = document.getElementById("fixRefreshButton");
@@ -47,6 +51,18 @@ planButton?.addEventListener("click", () => {
 
 generateButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "generateProposedChanges", task: taskInputEl?.value ?? "" });
+});
+
+runAutoModeButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "runAutoMode", task: taskInputEl?.value ?? "" });
+});
+
+stopAutoModeButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "stopAutoMode" });
+});
+
+autoRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "refreshAutoModeStatus" });
 });
 
 fixRefreshButton?.addEventListener("click", () => {
@@ -188,6 +204,11 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     pendingChangesOutputEl.innerHTML = renderPendingChanges(message.changeSet);
   }
 
+  if (message.type === "autoModeState" && autoModeOutputEl) {
+    autoModeOutputEl.classList.toggle("empty", !message.autoMode || message.autoMode.status === "idle");
+    autoModeOutputEl.innerHTML = renderAutoModeState(message.autoMode);
+  }
+
   if (message.type === "fixStatus" && fixStatusEl) {
     fixStatusEl.innerHTML = renderFixStatus(message.fixStatus, message.error);
   }
@@ -210,6 +231,7 @@ interface WebviewResponse {
     | "providerStatus"
     | "permissionStatus"
     | "pendingChanges"
+    | "autoModeState"
     | "fixStatus"
     | "fixResult"
     | "commandHistory";
@@ -220,6 +242,7 @@ interface WebviewResponse {
   state?: PermissionState;
   error?: string;
   changeSet?: PendingChangeSetMessage;
+  autoMode?: AutoModeRunStateMessage;
   result?: FixModeResultMessage;
   fixStatus?: FixModeStatusMessage;
   history?: TerminalCommandResultMessage[];
@@ -389,6 +412,85 @@ interface FixModeResultMessage {
   failedCommand?: TerminalCommandResultMessage;
   changeSet?: PendingChangeSetMessage;
   explanation?: string;
+}
+
+type AutoModeStatusMessage =
+  | "idle"
+  | "planning"
+  | "generating_changes"
+  | "waiting_for_approval"
+  | "applying_changes"
+  | "running_verification"
+  | "collecting_errors"
+  | "fixing"
+  | "succeeded"
+  | "failed"
+  | "blocked"
+  | "cancelled"
+  | "max_loops_reached";
+
+interface AutoModeTimelineEntryMessage {
+  id: string;
+  timestamp: string;
+  loop: number;
+  state: AutoModeStatusMessage;
+  title: string;
+  detail?: string;
+  status: "started" | "completed" | "blocked" | "failed" | "cancelled";
+}
+
+interface AutoModeFinalSummaryMessage {
+  task: string;
+  startedAt: string;
+  endedAt: string;
+  loops: number;
+  filesChanged: string[];
+  commandsRun: Array<{
+    command: string;
+    status: TerminalCommandResultMessage["status"];
+    exitCode?: number;
+  }>;
+  errorsFixed: number;
+  remainingErrors: number;
+  skippedOrBlockedActions: string[];
+  finalStatus: AutoModeStatusMessage;
+  recommendedNextAction: string;
+}
+
+interface PendingChangeStatsMessage {
+  pending: number;
+  approved: number;
+  rejected: number;
+  applied: number;
+  failed: number;
+  invalid: number;
+  reviewable: number;
+  applyable: number;
+}
+
+interface AutoModeRunStateMessage {
+  id: string;
+  task: string;
+  status: AutoModeStatusMessage;
+  currentLoop: number;
+  maxLoops: number;
+  startedAt?: string;
+  endedAt?: string;
+  timeline: AutoModeTimelineEntryMessage[];
+  plan?: PlanTaskResultMessage;
+  pendingChangeSet?: PendingChangeSetMessage;
+  pendingStats?: PendingChangeStatsMessage;
+  latestCommand?: TerminalCommandResultMessage;
+  diagnostics?: DiagnosticsSummaryMessage;
+  fixResult?: FixModeResultMessage;
+  changedFiles: string[];
+  commandsRun: TerminalCommandResultMessage[];
+  errorsFixed: number;
+  initialErrorCount: number;
+  blockedReasons: string[];
+  skippedActions: string[];
+  summary?: AutoModeFinalSummaryMessage;
+  recommendedNextAction?: string;
 }
 
 interface TerminalCommandResultMessage {
@@ -621,6 +723,85 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
     </section>`;
 }
 
+function renderAutoModeState(state: AutoModeRunStateMessage | undefined): string {
+  if (!state || state.status === "idle") {
+    return '<div class="empty">Auto Mode is idle.</div>';
+  }
+
+  const pending = state.pendingStats
+    ? `${state.pendingStats.pending} pending, ${state.pendingStats.approved} approved, ${state.pendingStats.applied} applied, ${state.pendingStats.invalid} invalid`
+    : "none";
+  const diagnostics = state.diagnostics
+    ? `${state.diagnostics.errorCount} errors, ${state.diagnostics.warningCount} warnings, ${state.diagnostics.total} total`
+    : "not collected";
+  const latestCommand = state.latestCommand
+    ? `<code>${escapeHtml(state.latestCommand.command)}</code><span>${escapeHtml(`${state.latestCommand.status}${state.latestCommand.exitCode === undefined ? "" : ` (${state.latestCommand.exitCode})`}`)}</span>`
+    : '<span class="muted">No command run yet.</span>';
+  const timeline = state.timeline.length > 0
+    ? `<ol class="auto-timeline">${state.timeline
+        .slice(-10)
+        .map(
+          (entry) =>
+            `<li class="${escapeHtml(entry.status)}"><strong>${escapeHtml(entry.title)}</strong><span>${escapeHtml(
+              `loop ${entry.loop} - ${entry.state} - ${entry.status}${entry.detail ? ` - ${entry.detail}` : ""}`
+            )}</span></li>`
+        )
+        .join("")}</ol>`
+    : '<p class="muted">No steps yet.</p>';
+  const plan = state.plan
+    ? `<p>${escapeHtml(state.plan.title)} <span class="muted">${escapeHtml(state.plan.complexity.level)}</span></p>`
+    : '<p class="muted">No plan generated yet.</p>';
+  const fix = state.fixResult
+    ? `<p>${escapeHtml(state.fixResult.title)}: ${escapeHtml(state.fixResult.summary)}</p>`
+    : '<p class="muted">No fix proposal used yet.</p>';
+  const summary = state.summary
+    ? `<dl class="auto-summary">
+        <div><dt>Final</dt><dd>${escapeHtml(state.summary.finalStatus)}</dd></div>
+        <div><dt>Files</dt><dd>${escapeHtml(state.summary.filesChanged.join(", ") || "none")}</dd></div>
+        <div><dt>Commands</dt><dd>${escapeHtml(String(state.summary.commandsRun.length))}</dd></div>
+        <div><dt>Errors</dt><dd>${escapeHtml(`${state.summary.errorsFixed} fixed, ${state.summary.remainingErrors} remaining`)}</dd></div>
+        <div><dt>Next</dt><dd>${escapeHtml(state.summary.recommendedNextAction)}</dd></div>
+      </dl>`
+    : '<p class="muted">Final summary appears when the run stops.</p>';
+
+  return `
+    <article class="auto-card">
+      <header class="plan-header">
+        <div>
+          <h3>${escapeHtml(state.task)}</h3>
+          <p>${escapeHtml(state.startedAt || "not started")}</p>
+        </div>
+        <span class="change-status ${escapeHtml(statusClass(state.status))}">${escapeHtml(state.status)}</span>
+      </header>
+      <dl class="auto-summary">
+        <div><dt>Loop</dt><dd>${state.currentLoop}/${state.maxLoops}</dd></div>
+        <div><dt>Pending</dt><dd>${escapeHtml(pending)}</dd></div>
+        <div><dt>Diagnostics</dt><dd>${escapeHtml(diagnostics)}</dd></div>
+        <div><dt>Changed</dt><dd>${escapeHtml(state.changedFiles.join(", ") || "none")}</dd></div>
+      </dl>
+      <section class="plan-section">
+        <h4>Latest Plan</h4>
+        ${plan}
+      </section>
+      <section class="plan-section">
+        <h4>Latest Command</h4>
+        <p>${latestCommand}</p>
+      </section>
+      <section class="plan-section">
+        <h4>Fix Summary</h4>
+        ${fix}
+      </section>
+      <section class="plan-section">
+        <h4>Step Timeline</h4>
+        ${timeline}
+      </section>
+      <section class="plan-section">
+        <h4>Final Summary</h4>
+        ${summary}
+      </section>
+    </article>`;
+}
+
 function renderFixStatus(status: FixModeStatusMessage | undefined, error: string | undefined): string {
   if (error) {
     return `<div><dt>Status</dt><dd>${escapeHtml(error)}</dd></div>`;
@@ -743,6 +924,19 @@ function renderCommandHistory(history: TerminalCommandResultMessage[]): string {
 function truncateOutput(value: string): string {
   const max = 8000;
   return value.length > max ? `${value.slice(0, max)}\n\n... output truncated in webview ...` : value;
+}
+
+function statusClass(status: AutoModeStatusMessage): string {
+  if (status === "succeeded") {
+    return "succeeded";
+  }
+  if (status === "failed" || status === "blocked" || status === "max_loops_reached") {
+    return "failed";
+  }
+  if (status === "cancelled" || status === "waiting_for_approval") {
+    return "cancelled";
+  }
+  return "running";
 }
 
 function countPendingStatuses(changes: PendingFileChangeMessage[]): Record<PendingChangeStatusMessage, number> {

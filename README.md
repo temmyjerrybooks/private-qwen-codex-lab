@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Later phases add auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Later phases add git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop.
 
 ## Quick Start
 
@@ -40,7 +40,11 @@ Configure these VS Code settings:
   "borger.maxContextFiles": 80,
   "borger.maxFileSizeKb": 300,
   "borger.confirmBeforeApply": true,
-  "borger.confirmBeforeTerminal": true
+  "borger.confirmBeforeTerminal": true,
+  "borger.autoModeEnabled": false,
+  "borger.autoMaxLoops": 3,
+  "borger.autoRequireApprovalForEdits": true,
+  "borger.autoRequireApprovalForCommands": true
 }
 ```
 
@@ -163,7 +167,45 @@ Fix Mode collects VS Code diagnostics, active-file context, selected text, works
 
 Fix Mode does not apply edits automatically. All file writes still go through Phase 7 approval and safe apply. Suggested verification commands are shown for manual execution through Phase 8 terminal controls. `Explain Last Error` is explanation-only and never creates pending changes.
 
-The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
+The dedicated GitHub push workflow, SSH, and deployment automation come later.
+
+## Controlled Auto Mode
+
+Phase 10 adds controlled local Auto Mode through:
+
+- `Borger: Run Auto Mode`
+- `Borger: Stop Auto Mode`
+- `Borger: Show Auto Mode Status`
+- the Auto Mode section in the Borger sidebar
+
+Auto Mode is disabled by default. Enable it deliberately with:
+
+```json
+{
+  "borger.autoModeEnabled": true,
+  "borger.autoMaxLoops": 3
+}
+```
+
+or with environment variables such as:
+
+```powershell
+$env:BORGER_AUTO_MODE_ENABLED="true"
+$env:BORGER_AUTO_MAX_LOOPS="3"
+```
+
+Auto Mode asks for confirmation before starting. It plans the task, generates pending diffs, waits for approval when required, applies only approved changes through the Phase 7 safe-apply path, runs only allowed verification commands through the Phase 8 terminal authorization path, collects diagnostics and command output, and calls Fix Mode when errors remain. It stops on cancellation, blocked actions, malformed proposals, provider budget failures, verification blockers, success, or max loops.
+
+Default allowed verification commands are:
+
+- `npm.cmd run check-types`
+- `npm.cmd run compile`
+- `npm test`
+- `npm run lint`
+- `pnpm test`
+- `python -m py_compile`
+
+Auto Mode does not commit, push, create PRs, use SSH, run remote operations, or deploy. Those workflows remain later-phase scope.
 
 ## Permission System
 
@@ -202,4 +244,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 7: Real edit mode and safe file application - implemented
 - Phase 8: Controlled terminal execution - implemented
 - Phase 9: Fix mode - implemented
-- Phase 10+: Not started
+- Phase 10: Controlled Auto Mode - implemented
+- Phase 11+: Not started

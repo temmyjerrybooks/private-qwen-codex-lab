@@ -215,7 +215,67 @@ Fix Mode remains review-first:
 - applying fixes still requires Phase 7 approval and safe apply
 - suggested verification commands must be run manually through Phase 8 terminal execution
 
-The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
+## Controlled Auto Mode
+
+Phase 10 adds a local, loop-limited Auto Mode. It coordinates existing Borger capabilities instead of bypassing them:
+
+1. plan the task with workspace context
+2. generate proposed changes
+3. wait for approval when required
+4. apply only approved pending diffs through safe apply
+5. run allowed verification commands through terminal authorization
+6. collect diagnostics and command output
+7. use Fix Mode when errors remain
+8. stop with a final summary
+
+Auto Mode is disabled by default. Enable it in VS Code settings:
+
+```json
+{
+  "borger.autoModeEnabled": true,
+  "borger.autoMaxLoops": 3,
+  "borger.autoRequireApprovalForEdits": true,
+  "borger.autoRequireApprovalForCommands": true
+}
+```
+
+Or use environment variables:
+
+```powershell
+$env:BORGER_AUTO_MODE_ENABLED="true"
+$env:BORGER_AUTO_MAX_LOOPS="3"
+$env:BORGER_AUTO_REQUIRE_APPROVAL_FOR_EDITS="true"
+$env:BORGER_AUTO_REQUIRE_APPROVAL_FOR_COMMANDS="true"
+```
+
+Run:
+
+```text
+Borger: Run Auto Mode
+Borger: Stop Auto Mode
+Borger: Show Auto Mode Status
+```
+
+The sidebar Auto Mode section shows current state, loop number, step timeline, plan summary, pending-change summary, latest command, diagnostics, Fix Mode summary, and final result.
+
+Approval behavior:
+
+- `read_only`: Auto Mode can plan, then stops before edits or commands.
+- `plan_only`: Auto Mode can plan, then stops before edits or commands.
+- `edit_with_review`: Auto Mode creates pending diffs and waits for approval before applying.
+- `trusted_workspace` and `full_auto`: Auto Mode can proceed more smoothly only when approval settings allow it.
+- `remote_ops`: remote operations are still not implemented in Phase 10.
+
+Allowed verification commands are exact-match controlled by `borger.autoAllowedVerificationCommands` or `BORGER_AUTO_ALLOWED_VERIFICATION_COMMANDS`. Defaults:
+
+- `npm.cmd run check-types`
+- `npm.cmd run compile`
+- `npm test`
+- `npm run lint`
+- `pnpm test`
+- `python -m py_compile`
+
+Auto Mode will not commit, push, create PRs, use SSH, run remote operations, or deploy. Those workflows come later.
 
 ## Commands
 
@@ -224,6 +284,9 @@ The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode co
 - `Borger: Test Model Connection`
 - `Borger: Plan Task`
 - `Borger: Generate Proposed Changes`
+- `Borger: Run Auto Mode`
+- `Borger: Stop Auto Mode`
+- `Borger: Show Auto Mode Status`
 - `Borger: Fix Diagnostics`
 - `Borger: Fix Last Failed Command`
 - `Borger: Fix Current File`

@@ -146,9 +146,29 @@
 - Preserve permission checks, provider routing, budget checks, LiteLLM support, workspace context, and action logging
 - Document Fix Mode behavior and troubleshooting
 
+## Phase 10 - Controlled Auto Mode
+
+- Add controlled Auto Mode run state and timeline
+- Add max-loop limit with conservative default
+- Add cancellation and stop support
+- Add Auto Mode lifecycle logging
+- Add `Borger: Run Auto Mode`
+- Add `Borger: Stop Auto Mode`
+- Add `Borger: Show Auto Mode Status`
+- Add Auto Mode sidebar section with current state, loop, timeline, pending summary, command summary, diagnostics, fix summary, and final summary
+- Reuse Plan Mode for execution plans
+- Reuse proposed changes and pending diff preview
+- Reuse safe apply for approved changes
+- Reuse controlled terminal execution for verification commands
+- Reuse diagnostics and Fix Mode when errors remain
+- Add Auto Mode settings and environment-variable overrides
+- Keep Auto Mode disabled and approval-gated by default
+- Stop safely on blocked actions, cancellation, failed proposals, provider/budget failures, secret-like files, destructive commands, and max loops
+- Keep GitHub push, SSH, remote ops, and deployment automation out of scope
+- Document Auto Mode behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 10: Auto mode
 - Phase 11: GitHub workflow
 - Phase 12: SSH and remote ops
 - Phase 12B: Memory and project notes

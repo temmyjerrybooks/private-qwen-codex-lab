@@ -102,9 +102,10 @@ export function isExecutorAvailable(): boolean {
 
 export async function runControlledTerminalCommand(
   command: string,
-  mode: TerminalExecutionMode = "captured"
+  mode: TerminalExecutionMode = "captured",
+  options: Omit<Parameters<typeof runAuthorizedTerminalCommand>[1], "mode"> = {}
 ): Promise<TerminalCommandResult> {
-  return runAuthorizedTerminalCommand(command, { mode });
+  return runAuthorizedTerminalCommand(command, { ...options, mode });
 }
 
 export interface ApplyPendingChangesResult {

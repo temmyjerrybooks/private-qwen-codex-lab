@@ -40,7 +40,7 @@ export async function runAuthorizedTerminalCommand(
     return blocked;
   }
 
-  const confirmed = await confirmCommandIfNeeded(normalizedCommand, cwd, authorizationDecision);
+  const confirmed = await confirmCommandIfNeeded(normalizedCommand, cwd, authorizationDecision, options.requireConfirmation);
   if (!confirmed) {
     const cancelled = buildResult({
       command: normalizedCommand,
@@ -142,10 +142,11 @@ function buildResult(input: {
 async function confirmCommandIfNeeded(
   command: string,
   cwd: string,
-  decision: AuthorizationDecision
+  decision: AuthorizationDecision,
+  requireConfirmation = false
 ): Promise<boolean> {
   const config = getBorgerConfig();
-  if (!decision.requiresConfirmation && !config.confirmBeforeTerminal) {
+  if (!requireConfirmation && !decision.requiresConfirmation && !config.confirmBeforeTerminal) {
     return true;
   }
 

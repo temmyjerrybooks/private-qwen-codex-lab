@@ -17,6 +17,9 @@
     "onCommand:borger.testModelConnection",
     "onCommand:borger.planTask",
     "onCommand:borger.generateProposedChanges",
+    "onCommand:borger.runAutoMode",
+    "onCommand:borger.stopAutoMode",
+    "onCommand:borger.showAutoModeStatus",
     "onCommand:borger.fixDiagnostics",
     "onCommand:borger.fixLastFailedCommand",
     "onCommand:borger.fixCurrentFile",
@@ -107,6 +110,52 @@
           "type": "boolean",
           "default": true,
           "description": "Require confirmation before running terminal commands."
+        },
+        "borger.autoModeEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable controlled local Auto Mode. Environment override: BORGER_AUTO_MODE_ENABLED."
+        },
+        "borger.autoMaxLoops": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "description": "Maximum loops for controlled Auto Mode. Environment override: BORGER_AUTO_MAX_LOOPS."
+        },
+        "borger.autoRequireApprovalForEdits": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require approved pending diffs before Auto Mode applies edits. Environment override: BORGER_AUTO_REQUIRE_APPROVAL_FOR_EDITS."
+        },
+        "borger.autoRequireApprovalForCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require confirmation before Auto Mode runs verification commands. Environment override: BORGER_AUTO_REQUIRE_APPROVAL_FOR_COMMANDS."
+        },
+        "borger.autoAllowedVerificationCommands": {
+          "type": "array",
+          "default": [
+            "npm.cmd run check-types",
+            "npm.cmd run compile",
+            "npm test",
+            "npm run lint",
+            "pnpm test",
+            "python -m py_compile"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Exact verification commands Auto Mode may run. Environment override: BORGER_AUTO_ALLOWED_VERIFICATION_COMMANDS."
+        },
+        "borger.autoStopOnDestructiveCommand": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stop Auto Mode before running destructive-looking commands. Environment override: BORGER_AUTO_STOP_ON_DESTRUCTIVE_COMMAND."
+        },
+        "borger.autoStopOnSecretFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stop Auto Mode if a proposed change targets a secret-like file. Environment override: BORGER_AUTO_STOP_ON_SECRET_FILE."
         },
         "borger.permissionProfile": {
           "type": "string",
@@ -307,6 +356,18 @@
       {
         "command": "borger.generateProposedChanges",
         "title": "Borger: Generate Proposed Changes"
+      },
+      {
+        "command": "borger.runAutoMode",
+        "title": "Borger: Run Auto Mode"
+      },
+      {
+        "command": "borger.stopAutoMode",
+        "title": "Borger: Stop Auto Mode"
+      },
+      {
+        "command": "borger.showAutoModeStatus",
+        "title": "Borger: Show Auto Mode Status"
       },
       {
         "command": "borger.fixDiagnostics",

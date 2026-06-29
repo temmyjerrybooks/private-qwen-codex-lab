@@ -1,4 +1,11 @@
 import * as vscode from "vscode";
+import {
+  getAutoModeState,
+  onAutoModeStateChanged,
+  runAutoMode as runAutoModeLoop,
+  stopAutoMode as stopAutoModeLoop
+} from "../agent/autoMode";
+import { AutoModeRunState } from "../agent/autoTypes";
 import { buildWorkspaceContext } from "../agent/contextBuilder";
 import {
   applyApprovedPendingChanges,
@@ -31,17 +38,21 @@ import { TerminalExecutionMode } from "../terminal/commandTypes";
 import { formatCommandResultForOutput, formatCommandHistoryForOutput } from "../ui/commandOutputFormatter";
 import { formatPendingChangesForOutput } from "../ui/diffProvider";
 import { formatFixModeResultForOutput } from "../ui/fixResultFormatter";
+import { formatAutoModeStateForOutput } from "../ui/autoModeFormatter";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
 
   private view?: vscode.WebviewView;
+  private readonly autoModeSubscription: vscode.Disposable;
 
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly context: vscode.ExtensionContext,
     private readonly output: vscode.OutputChannel
-  ) {}
+  ) {
+    this.autoModeSubscription = onAutoModeStateChanged((state) => this.postAutoModeState(state));
+  }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
@@ -64,6 +75,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postPendingChanges(getPendingChanges());
     this.postCommandHistory();
     void this.postFixStatus();
+    this.postAutoModeState();
   }
 
   async focus(): Promise<void> {
@@ -101,6 +113,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         error: error instanceof Error ? error.message : String(error)
       });
     }
+  }
+
+  postAutoModeState(state: AutoModeRunState = getAutoModeState()): void {
+    this.view?.webview.postMessage({ type: "autoModeState", autoMode: state });
   }
 
   private postFixResult(result: Awaited<ReturnType<typeof generateDiagnosticsFix>>): void {
@@ -152,6 +168,27 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     await this.postProviderStatus();
     await this.postPermissionStatus();
     await this.postFixStatus();
+  }
+
+  async runAutoMode(task: string): Promise<void> {
+    this.postState("Running Auto Mode...");
+    const result = await runAutoModeLoop(task, this.context);
+    this.output.show(true);
+    this.output.appendLine(formatAutoModeStateForOutput(result));
+    this.postAutoModeState(result);
+    this.postPendingChanges(getPendingChanges());
+    this.postCommandHistory();
+    await this.postFixStatus();
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+  }
+
+  async stopAutoMode(): Promise<void> {
+    const result = await stopAutoModeLoop();
+    this.output.show(true);
+    this.output.appendLine(formatAutoModeStateForOutput(result));
+    this.postAutoModeState(result);
+    this.postState("Auto Mode stop requested");
   }
 
   async applyApprovedChanges(): Promise<void> {
@@ -287,6 +324,34 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     if (message.type === "showPendingChanges") {
       this.postPendingChanges(getPendingChanges());
+      return;
+    }
+
+    if (message.type === "runAutoMode" && typeof message.task === "string") {
+      try {
+        await this.runAutoMode(message.task);
+      } catch (error) {
+        this.postState("Auto Mode failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        this.postAutoModeState();
+      }
+      return;
+    }
+
+    if (message.type === "stopAutoMode") {
+      try {
+        await this.stopAutoMode();
+      } catch (error) {
+        this.postState("Stop Auto Mode failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "refreshAutoModeStatus") {
+      this.postAutoModeState();
       return;
     }
 
@@ -552,6 +617,18 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         <button id="planButton">Plan</button>
         <button id="generateButton">Generate Proposed Changes</button>
       </div>
+    </section>
+
+    <section class="output">
+      <div class="section-title">
+        <h2>Auto Mode</h2>
+        <button id="autoRefreshButton">Refresh</button>
+      </div>
+      <div class="actions">
+        <button id="runAutoModeButton">Run Auto Mode</button>
+        <button id="stopAutoModeButton">Stop Auto Mode</button>
+      </div>
+      <div id="autoModeOutput" class="auto-output empty">Auto Mode is idle.</div>
     </section>
 
     <section class="output">

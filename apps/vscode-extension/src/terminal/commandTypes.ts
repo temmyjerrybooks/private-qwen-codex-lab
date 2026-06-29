@@ -23,4 +23,5 @@ export interface TerminalCommandResult {
 export interface TerminalCommandRunOptions {
   mode?: TerminalExecutionMode;
   reason?: string;
+  requireConfirmation?: boolean;
 }

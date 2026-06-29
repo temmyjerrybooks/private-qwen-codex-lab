@@ -21,12 +21,15 @@ import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRevertLastApplyCommand } from "./commands/revertLastApply";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
+import { registerRunAutoModeCommand } from "./commands/runAutoMode";
 import { registerRunSuggestedCommandCommand } from "./commands/runSuggestedCommand";
 import { registerRunTerminalCommandCommand } from "./commands/runTerminalCommand";
+import { registerShowAutoModeStatusCommand } from "./commands/showAutoModeStatus";
 import { registerShowCommandHistoryCommand } from "./commands/showCommandHistory";
 import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
+import { registerStopAutoModeCommand } from "./commands/stopAutoMode";
 import { registerSwitchProviderCommand } from "./commands/switchProvider";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
 import { registerUpdatePermissionProfileCommand } from "./commands/updatePermissionProfile";
@@ -59,6 +62,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerRefactorSelectionCommand(),
     registerRunAgentTaskCommand(output, agentPanel),
     registerGenerateProposedChangesCommand(output, agentPanel),
+    registerRunAutoModeCommand(output, agentPanel),
+    registerStopAutoModeCommand(output, agentPanel),
+    registerShowAutoModeStatusCommand(output, agentPanel),
     registerFixDiagnosticsCommand(output, agentPanel),
     registerFixLastCommandCommand(output, agentPanel),
     registerFixCurrentFileCommand(output, agentPanel),

@@ -335,6 +335,65 @@ code {
   gap: 12px;
 }
 
+.auto-output {
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.auto-output.empty {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.auto-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auto-summary {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.auto-summary div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.auto-summary dt {
+  color: var(--vscode-descriptionForeground);
+}
+
+.auto-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.auto-timeline {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.auto-timeline li {
+  margin-bottom: 6px;
+}
+
+.auto-timeline span {
+  display: block;
+  color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+}
+
 .command-output {
   min-height: 120px;
   max-height: 520px;

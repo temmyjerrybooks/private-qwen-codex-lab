@@ -95,6 +95,18 @@ http://localhost:4000/v1
 - If suggested verification commands appear, run them manually. Fix Mode does not rerun commands automatically.
 - If Explain Last Error creates no pending changes, that is expected. It is explanation-only.
 
+## Auto Mode Issues
+
+- If Auto Mode refuses to start, confirm `borger.autoModeEnabled` is true or `BORGER_AUTO_MODE_ENABLED=true`.
+- If Auto Mode stops after planning, check the active permission profile. `read_only` and `plan_only` do not allow edits or commands.
+- If Auto Mode waits for approval, review pending diffs and approve or reject them in the sidebar.
+- If Auto Mode cannot run a verification command, confirm it is listed in `borger.autoAllowedVerificationCommands` or `BORGER_AUTO_ALLOWED_VERIFICATION_COMMANDS`.
+- If a command is blocked, check `Borger: Show Permissions` and the command policy. Auto Mode uses the same terminal authorization as manual commands.
+- If no provider is available or budget is paused, run `Borger: Show Provider Status`.
+- If the model returns malformed JSON, Auto Mode stops with a failed summary. Rerun with a narrower task or use Fix Mode manually.
+- If max loops are reached, inspect the latest command output, diagnostics, and pending changes before continuing manually.
+- If Auto Mode stops on a secret-like file, handle that file manually. `.env.example` is allowed; real credential files are blocked.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

@@ -35,6 +35,17 @@ export interface PendingChangeSet {
   rawModelResponse: string;
 }
 
+export interface PendingChangeStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  applied: number;
+  failed: number;
+  invalid: number;
+  reviewable: number;
+  applyable: number;
+}
+
 let currentPendingChanges: PendingChangeSet | undefined;
 
 export function createPendingChangeSet(input: Omit<PendingChangeSet, "id" | "generatedAt">): PendingChangeSet {
@@ -127,6 +138,35 @@ export function markPendingChangeFailed(changeId: string, failedReason: string):
     status: "failed",
     failedReason
   });
+}
+
+export function getPendingChangeStats(changeSet: PendingChangeSet | undefined = currentPendingChanges): PendingChangeStats {
+  const stats: PendingChangeStats = {
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    applied: 0,
+    failed: 0,
+    invalid: 0,
+    reviewable: 0,
+    applyable: 0
+  };
+
+  for (const change of changeSet?.changes ?? []) {
+    stats[change.status] += 1;
+    if (canReviewStatusChange(change.status)) {
+      stats.reviewable += 1;
+    }
+    if (change.status === "approved") {
+      stats.applyable += 1;
+    }
+  }
+
+  return stats;
+}
+
+export function hasSecretLikeInvalidChange(changeSet: PendingChangeSet): boolean {
+  return changeSet.changes.some((change) => /secret|credential|token|private/i.test(change.invalidReason ?? ""));
 }
 
 function canReviewStatusChange(status: PendingChangeStatus): boolean {

@@ -82,3 +82,15 @@
 6. Review generated pending diffs in the sidebar.
 7. Approve and apply fixes through the existing safe apply workflow only.
 8. Run suggested verification commands manually through Phase 8 terminal execution.
+
+## Auto Mode Workflow
+
+1. Enable Auto Mode only when you want a controlled local loop: set `borger.autoModeEnabled` or `BORGER_AUTO_MODE_ENABLED=true`.
+2. Keep `borger.autoMaxLoops` low. The default is `3`.
+3. Keep `borger.autoRequireApprovalForEdits` and `borger.autoRequireApprovalForCommands` enabled for normal work.
+4. Run `Borger: Run Auto Mode` with a focused task.
+5. Review the generated plan, pending diffs, and timeline in the sidebar.
+6. Approve or reject pending changes if Auto Mode enters `waiting_for_approval`.
+7. Use `Borger: Stop Auto Mode` whenever the run should halt.
+8. Review the final summary for files changed, commands run, remaining errors, blockers, and recommended next action.
+9. Do not use Auto Mode for GitHub push, SSH, remote server work, or deployment automation in Phase 10.

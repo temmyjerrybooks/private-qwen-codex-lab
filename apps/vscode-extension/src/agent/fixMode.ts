@@ -36,6 +36,10 @@ export async function getFixModeStatus(): Promise<FixModeStatus> {
   };
 }
 
+export function hasFixableErrorSignals(status: FixModeStatus): boolean {
+  return status.diagnostics.errorCount > 0 || status.latestFailedCommand?.status === "failed";
+}
+
 export async function generateDiagnosticsFix(
   context: vscode.ExtensionContext,
   userTask?: string
