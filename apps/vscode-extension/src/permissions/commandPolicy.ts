@@ -15,6 +15,13 @@ const destructivePatterns = [
   "git reset --hard",
   "git push --force",
   "git push -f",
+  "git clean -fd",
+  "git clean -df",
+  "git checkout -- .",
+  "git branch -d",
+  "git branch -D",
+  "git rebase",
+  "git reflog expire",
   "format",
   "shutdown",
   "del /s",
@@ -164,7 +171,7 @@ function getCommandName(command: string): string {
 }
 
 function classifyGitCommand(command: string, state: PermissionState): CommandPolicyResult | undefined {
-  if (/^git\s+(status|diff|branch\s+--show-current)\b/.test(command)) {
+  if (isReadOnlyGitInspectionCommand(command)) {
     if (!state.capabilities.canUseGit && !state.capabilities.canReadWorkspace) {
       return {
         classification: "blocked",
@@ -185,7 +192,7 @@ function classifyGitCommand(command: string, state: PermissionState): CommandPol
     }
     return {
       classification: "needs_confirmation",
-      reason: "Git commit requires confirmation and is not part of the dedicated GitHub workflow yet.",
+      reason: "Git commit requires confirmation.",
       matchedPattern: "git commit",
       commandName: "git"
     };
@@ -201,11 +208,16 @@ function classifyGitCommand(command: string, state: PermissionState): CommandPol
     }
     return {
       classification: "needs_confirmation",
-      reason: "Git push requires confirmation; the dedicated GitHub workflow comes in a later phase.",
+      reason: "Git push requires confirmation.",
       matchedPattern: "git push",
       commandName: "git"
     };
   }
 
   return undefined;
+}
+
+export function isReadOnlyGitInspectionCommand(command: string): boolean {
+  const normalized = normalizeCommand(command);
+  return /^git\s+(status|diff|branch\s+--show-current|remote\s+get-url|rev-parse)\b/.test(normalized);
 }

@@ -93,4 +93,16 @@
 6. Approve or reject pending changes if Auto Mode enters `waiting_for_approval`.
 7. Use `Borger: Stop Auto Mode` whenever the run should halt.
 8. Review the final summary for files changed, commands run, remaining errors, blockers, and recommended next action.
-9. Do not use Auto Mode for GitHub push, SSH, remote server work, or deployment automation in Phase 10.
+9. Do not use Auto Mode for GitHub push, SSH, remote server work, or deployment automation.
+
+## Git and GitHub Workflow
+
+1. Run `Borger: Git Status` before staging or committing.
+2. Create a topic branch with `Borger: Create Git Branch` when the current branch is not already appropriate.
+3. Use `Borger: Stage Git Changes` to stage selected files or all safe files.
+4. Review protected-file warnings before staging. Borger skips `.borger/*.local.json`, action logs, usage ledgers, provider state, backups, real `.env` files, private keys, tokens, and credentials.
+5. Run `Borger: Generate Commit Message` after staging. If no provider is available, enter a message manually.
+6. Run `Borger: Create Git Commit` only after reviewing the staged file list.
+7. Run `Borger: Push Git Branch` after confirming the branch and remote.
+8. Run `Borger: Prepare Pull Request` to create a PR with GitHub CLI when available, or to print manual PR text when `gh` is not installed.
+9. Keep force pushes, hard resets, rebases, branch deletion, git clean, SSH, remote operations, and deployment automation out of Phase 11.

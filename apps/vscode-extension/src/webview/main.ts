@@ -12,6 +12,15 @@ const autoModeOutputEl = document.getElementById("autoModeOutput");
 const runAutoModeButton = document.getElementById("runAutoModeButton");
 const stopAutoModeButton = document.getElementById("stopAutoModeButton");
 const autoRefreshButton = document.getElementById("autoRefreshButton");
+const gitWorkflowOutputEl = document.getElementById("gitWorkflowOutput");
+const gitRefreshButton = document.getElementById("gitRefreshButton");
+const createBranchButton = document.getElementById("createBranchButton");
+const stageSelectedButton = document.getElementById("stageSelectedButton");
+const stageAllButton = document.getElementById("stageAllButton");
+const generateCommitMessageButton = document.getElementById("generateCommitMessageButton");
+const createCommitButton = document.getElementById("createCommitButton");
+const pushBranchButton = document.getElementById("pushBranchButton");
+const preparePrButton = document.getElementById("preparePrButton");
 const fixStatusEl = document.getElementById("fixStatus");
 const fixOutputEl = document.getElementById("fixOutput");
 const fixRefreshButton = document.getElementById("fixRefreshButton");
@@ -63,6 +72,38 @@ stopAutoModeButton?.addEventListener("click", () => {
 
 autoRefreshButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "refreshAutoModeStatus" });
+});
+
+gitRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "refreshGitStatus" });
+});
+
+createBranchButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "createGitBranch" });
+});
+
+stageSelectedButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "stageSelectedGitChanges" });
+});
+
+stageAllButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "stageAllGitChanges" });
+});
+
+generateCommitMessageButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "generateCommitMessage" });
+});
+
+createCommitButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "createGitCommit" });
+});
+
+pushBranchButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "pushGitBranch" });
+});
+
+preparePrButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "preparePullRequest" });
 });
 
 fixRefreshButton?.addEventListener("click", () => {
@@ -209,6 +250,11 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     autoModeOutputEl.innerHTML = renderAutoModeState(message.autoMode);
   }
 
+  if (message.type === "gitWorkflowState" && gitWorkflowOutputEl) {
+    gitWorkflowOutputEl.classList.toggle("empty", !message.git || !message.git.available);
+    gitWorkflowOutputEl.innerHTML = renderGitWorkflowState(message.git);
+  }
+
   if (message.type === "fixStatus" && fixStatusEl) {
     fixStatusEl.innerHTML = renderFixStatus(message.fixStatus, message.error);
   }
@@ -232,6 +278,7 @@ interface WebviewResponse {
     | "permissionStatus"
     | "pendingChanges"
     | "autoModeState"
+    | "gitWorkflowState"
     | "fixStatus"
     | "fixResult"
     | "commandHistory";
@@ -243,6 +290,7 @@ interface WebviewResponse {
   error?: string;
   changeSet?: PendingChangeSetMessage;
   autoMode?: AutoModeRunStateMessage;
+  git?: GitWorkflowStateMessage;
   result?: FixModeResultMessage;
   fixStatus?: FixModeStatusMessage;
   history?: TerminalCommandResultMessage[];
@@ -491,6 +539,59 @@ interface AutoModeRunStateMessage {
   skippedActions: string[];
   summary?: AutoModeFinalSummaryMessage;
   recommendedNextAction?: string;
+}
+
+interface GitChangedFileMessage {
+  path: string;
+  indexStatus: string;
+  workingTreeStatus: string;
+  staged: boolean;
+  unstaged: boolean;
+  untracked: boolean;
+  protected: boolean;
+  protectedReason?: string;
+}
+
+interface GitCommandResultMessage {
+  command: string;
+  cwd: string;
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  status: TerminalCommandResultMessage["status"];
+  reason: string;
+}
+
+interface PullRequestPreparationMessage {
+  title: string;
+  body: string;
+  ghAvailable: boolean;
+  command?: string;
+  manualInstructions?: string;
+  result?: GitCommandResultMessage;
+}
+
+interface GitWorkflowStateMessage {
+  available: boolean;
+  branch?: string;
+  remote?: string;
+  upstream?: string;
+  clean: boolean;
+  files: GitChangedFileMessage[];
+  stagedFiles: GitChangedFileMessage[];
+  unstagedFiles: GitChangedFileMessage[];
+  untrackedFiles: GitChangedFileMessage[];
+  safeStageableFiles: GitChangedFileMessage[];
+  protectedFiles: GitChangedFileMessage[];
+  diffStat: string;
+  diffNameOnly: string[];
+  generatedCommitMessage?: string;
+  pullRequest?: PullRequestPreparationMessage;
+  lastCommand?: GitCommandResultMessage;
+  lastError?: string;
 }
 
 interface TerminalCommandResultMessage {
@@ -798,6 +899,74 @@ function renderAutoModeState(state: AutoModeRunStateMessage | undefined): string
       <section class="plan-section">
         <h4>Final Summary</h4>
         ${summary}
+      </section>
+    </article>`;
+}
+
+function renderGitWorkflowState(state: GitWorkflowStateMessage | undefined): string {
+  if (!state) {
+    return '<div class="empty">Git status has not been loaded.</div>';
+  }
+  if (!state.available) {
+    return `<div class="empty">Git unavailable: ${escapeHtml(state.lastError || "status not loaded")}</div>`;
+  }
+
+  const changed = state.files.length > 0
+    ? `<ul class="git-file-list">${state.files
+        .slice(0, 16)
+        .map(
+          (file) =>
+            `<li class="${file.protected ? "protected" : ""}"><code>${escapeHtml(file.indexStatus + file.workingTreeStatus)}</code> ${escapeHtml(
+              file.path
+            )}${file.protected ? `<span>${escapeHtml(file.protectedReason || "protected")}</span>` : ""}</li>`
+        )
+        .join("")}</ul>`
+    : '<p class="muted">No changed files.</p>';
+  const generated = state.generatedCommitMessage
+    ? `<pre class="git-message">${escapeHtml(state.generatedCommitMessage)}</pre>`
+    : '<p class="muted">No generated commit message.</p>';
+  const last = state.lastCommand
+    ? `<p><code>${escapeHtml(state.lastCommand.command)}</code></p><p class="${state.lastCommand.status === "succeeded" ? "muted" : "warning"}">${escapeHtml(
+        `${state.lastCommand.status} (${state.lastCommand.exitCode}) - ${state.lastCommand.reason}`
+      )}</p>`
+    : '<p class="muted">No Git workflow command run.</p>';
+  const pr = state.pullRequest
+    ? `<dl class="git-summary">
+        <div><dt>Title</dt><dd>${escapeHtml(state.pullRequest.title)}</dd></div>
+        <div><dt>gh</dt><dd>${state.pullRequest.ghAvailable ? "available" : "not available"}</dd></div>
+        <div><dt>Command</dt><dd>${escapeHtml(state.pullRequest.command || "manual")}</dd></div>
+        <div><dt>Note</dt><dd>${escapeHtml(state.pullRequest.manualInstructions || state.pullRequest.result?.reason || "prepared")}</dd></div>
+      </dl>`
+    : '<p class="muted">No pull request prepared.</p>';
+
+  return `
+    <article class="git-card">
+      <dl class="git-summary">
+        <div><dt>Branch</dt><dd>${escapeHtml(state.branch || "unknown")}</dd></div>
+        <div><dt>Remote</dt><dd>${escapeHtml(state.remote || "unknown")}</dd></div>
+        <div><dt>Upstream</dt><dd>${escapeHtml(state.upstream || "none")}</dd></div>
+        <div><dt>Files</dt><dd>${state.stagedFiles.length} staged, ${state.unstagedFiles.length} unstaged, ${state.untrackedFiles.length} untracked</dd></div>
+        <div><dt>Protected</dt><dd>${state.protectedFiles.length}</dd></div>
+      </dl>
+      <section class="plan-section">
+        <h4>Changed Files</h4>
+        ${changed}
+      </section>
+      <section class="plan-section">
+        <h4>Diff Stat</h4>
+        <pre class="git-message">${escapeHtml(state.diffStat || "No unstaged diff stat.")}</pre>
+      </section>
+      <section class="plan-section">
+        <h4>Generated Commit Message</h4>
+        ${generated}
+      </section>
+      <section class="plan-section">
+        <h4>Pull Request</h4>
+        ${pr}
+      </section>
+      <section class="plan-section">
+        <h4>Last Git Command</h4>
+        ${last}
       </section>
     </article>`;
 }

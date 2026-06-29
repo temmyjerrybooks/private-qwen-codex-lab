@@ -80,7 +80,7 @@ http://localhost:4000/v1
 - If output is missing in interactive mode, rerun in captured mode. Interactive mode sends the command to a VS Code terminal and cannot reliably capture output.
 - If a command appears to run in the wrong folder, confirm the open VS Code folder is the intended workspace root. Phase 8 always uses the open workspace root as cwd.
 - If a command using `cd ..`, `.git` deletion, `rm -rf`, forced git push, shutdown, or recursive forced deletion is blocked, that is expected default policy.
-- If `git push` is blocked, use a stronger permission profile only when explicitly intended. The dedicated GitHub workflow comes later.
+- If `git push` is blocked from the generic terminal runner, use the dedicated Phase 11 Git workflow so Borger can apply Git-specific authorization and confirmation.
 - If command history is empty after reloading VS Code, that is expected. Phase 8 command history is in-memory for the current session.
 - Command authorization and lifecycle events are logged to `.borger/action-log.jsonl`.
 
@@ -106,6 +106,20 @@ http://localhost:4000/v1
 - If the model returns malformed JSON, Auto Mode stops with a failed summary. Rerun with a narrower task or use Fix Mode manually.
 - If max loops are reached, inspect the latest command output, diagnostics, and pending changes before continuing manually.
 - If Auto Mode stops on a secret-like file, handle that file manually. `.env.example` is allowed; real credential files are blocked.
+
+## Git and GitHub Workflow Issues
+
+- If `Borger: Git Status` fails, confirm the workspace folder is a git repository and that `git` is available on PATH.
+- If Git status is blocked, run `Borger: Show Permissions` and confirm the active profile allows `git_status`.
+- If staging is blocked, confirm the active profile allows `git_commit` and `run_terminal`.
+- If a file is skipped during staging, it may be protected local state, a log/ledger, `.borger/backups/`, a real `.env` file, a private key, a token file, or another credential-like file. `.env.example` is allowed.
+- If commit message generation fails, check provider availability, provider budget state, LiteLLM connectivity, and the current staged/unstaged diff size. You can enter a commit message manually.
+- If commit creation says no staged changes exist, stage files first and rerun `Borger: Git Status`.
+- If push is blocked, confirm the active profile allows `git_push`, the command policy permits non-forced push, and the branch has a valid remote.
+- If push authentication fails, fix Git credentials outside Borger and retry.
+- If PR creation fails because `gh` is missing, install GitHub CLI or use the manual PR title/body printed by Borger.
+- If `gh pr create` fails with authentication errors, run `gh auth status` or `gh auth login` outside Borger.
+- Force push, hard reset, rebase, branch deletion, and git clean are blocked by default.
 
 ## Modal and Hugging Face Issues
 

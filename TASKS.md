@@ -167,9 +167,25 @@
 - Keep GitHub push, SSH, remote ops, and deployment automation out of scope
 - Document Auto Mode behavior and troubleshooting
 
+## Phase 11 - Git and GitHub Workflow
+
+- Add typed Git workflow state and changed-file summaries
+- Add read-only Git status refresh
+- Add safe branch creation command
+- Add protected-file-aware staging for selected files and all safe files
+- Add commit message generation through ProviderRouter and budget checks
+- Add reviewed commit creation
+- Add reviewed branch push
+- Add GitHub CLI pull-request preparation with manual fallback
+- Add Git Workflow sidebar section
+- Log Git workflow lifecycle events
+- Preserve permission checks and command policy for every Git command
+- Block force push, hard reset, rebase, branch deletion, git clean, and secret/local-state staging
+- Keep SSH, remote ops, deploy automation, and Auto Mode commits out of scope
+- Document Git/GitHub workflow behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 11: GitHub workflow
 - Phase 12: SSH and remote ops
 - Phase 12B: Memory and project notes
 - Phase 13: Polish and packaging

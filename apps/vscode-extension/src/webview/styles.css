@@ -394,6 +394,82 @@ code {
   overflow-wrap: anywhere;
 }
 
+.git-output {
+  min-height: 120px;
+  max-height: 520px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.git-output.empty {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.git-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.git-summary {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.git-summary div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.git-summary dt {
+  color: var(--vscode-descriptionForeground);
+}
+
+.git-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.git-file-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.git-file-list li {
+  margin-bottom: 5px;
+  overflow-wrap: anywhere;
+}
+
+.git-file-list li.protected {
+  color: var(--vscode-errorForeground);
+}
+
+.git-file-list span {
+  display: block;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.git-message {
+  max-height: 180px;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+  line-height: 1.35;
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
 .command-output {
   min-height: 120px;
   max-height: 520px;

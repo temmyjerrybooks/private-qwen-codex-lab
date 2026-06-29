@@ -20,6 +20,13 @@
     "onCommand:borger.runAutoMode",
     "onCommand:borger.stopAutoMode",
     "onCommand:borger.showAutoModeStatus",
+    "onCommand:borger.gitStatus",
+    "onCommand:borger.createGitBranch",
+    "onCommand:borger.stageGitChanges",
+    "onCommand:borger.generateCommitMessage",
+    "onCommand:borger.createGitCommit",
+    "onCommand:borger.pushGitBranch",
+    "onCommand:borger.preparePullRequest",
     "onCommand:borger.fixDiagnostics",
     "onCommand:borger.fixLastFailedCommand",
     "onCommand:borger.fixCurrentFile",
@@ -368,6 +375,34 @@
       {
         "command": "borger.showAutoModeStatus",
         "title": "Borger: Show Auto Mode Status"
+      },
+      {
+        "command": "borger.gitStatus",
+        "title": "Borger: Git Status"
+      },
+      {
+        "command": "borger.createGitBranch",
+        "title": "Borger: Create Git Branch"
+      },
+      {
+        "command": "borger.stageGitChanges",
+        "title": "Borger: Stage Git Changes"
+      },
+      {
+        "command": "borger.generateCommitMessage",
+        "title": "Borger: Generate Commit Message"
+      },
+      {
+        "command": "borger.createGitCommit",
+        "title": "Borger: Create Git Commit"
+      },
+      {
+        "command": "borger.pushGitBranch",
+        "title": "Borger: Push Git Branch"
+      },
+      {
+        "command": "borger.preparePullRequest",
+        "title": "Borger: Prepare Pull Request"
       },
       {
         "command": "borger.fixDiagnostics",

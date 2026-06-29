@@ -268,4 +268,42 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 11
+
+- `Borger: Git Status` exists
+- `Borger: Create Git Branch` exists
+- `Borger: Stage Git Changes` exists
+- `Borger: Generate Commit Message` exists
+- `Borger: Create Git Commit` exists
+- `Borger: Push Git Branch` exists
+- `Borger: Prepare Pull Request` exists
+- The sidebar includes a Git Workflow section
+- Git status shows current branch, remote/upstream, staged/unstaged/untracked counts, protected files, and latest command output
+- Read-only Git status checks `git_status`
+- Branch creation, staging, and commit creation check `git_commit`
+- Push and GitHub PR creation check `git_push`
+- Every Git or GitHub CLI command checks `run_terminal` and command policy first
+- Staging blocks `.borger/providers.local.json`, `.borger/secrets.local.json`, `.borger/permissions.local.json`, `.borger/action-log.jsonl`, `.borger/usage-ledger.jsonl`, `.borger/provider-state.json`, `.borger/backups/`, real `.env` files, private keys, tokens, and credentials
+- `.env.example` remains allowed
+- Commit message generation uses ProviderRouter and budget checks
+- Commit message generation has a manual fallback when no provider is available
+- Commit creation requires staged files and user confirmation when required by profile or policy
+- Push uses the current branch and does not force push
+- Push can set upstream for a branch without one
+- Pull-request preparation uses GitHub CLI when available and prints manual PR text when `gh` is unavailable
+- Git workflow lifecycle events are logged to `.borger/action-log.jsonl`
+- Force push, hard reset, rebase, branch deletion, git clean, SSH, remote ops, and deployment automation remain out of scope
+- Existing Plan Mode still works
+- Existing proposed change generation still works
+- Existing safe edit application still works
+- Existing terminal command execution still works
+- Existing Fix Mode still works
+- Existing Auto Mode still works
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

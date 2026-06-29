@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Later phases add git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Later phases add remote ops, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop. Phase 11 adds reviewed branch, staging, commit, push, and pull-request preparation workflows.
 
 ## Quick Start
 
@@ -205,7 +205,41 @@ Default allowed verification commands are:
 - `pnpm test`
 - `python -m py_compile`
 
-Auto Mode does not commit, push, create PRs, use SSH, run remote operations, or deploy. Those workflows remain later-phase scope.
+Auto Mode does not commit, push, create PRs, use SSH, run remote operations, or deploy. Git and GitHub actions are still manual Phase 11 workflows.
+
+## Git and GitHub Workflow
+
+Phase 11 adds controlled Git/GitHub actions through:
+
+- `Borger: Git Status`
+- `Borger: Create Git Branch`
+- `Borger: Stage Git Changes`
+- `Borger: Generate Commit Message`
+- `Borger: Create Git Commit`
+- `Borger: Push Git Branch`
+- `Borger: Prepare Pull Request`
+- the Git Workflow section in the Borger sidebar
+
+The Git Workflow section shows the current branch, remote/upstream, staged/unstaged/untracked counts, protected files, generated commit message, latest command output, and pull-request preparation text.
+
+Borger protects local/runtime files from staging and commit:
+
+- `.borger/providers.local.json`
+- `.borger/secrets.local.json`
+- `.borger/permissions.local.json`
+- `.borger/action-log.jsonl`
+- `.borger/usage-ledger.jsonl`
+- `.borger/provider-state.json`
+- `.borger/backups/`
+- `.env`, `.env.local`, private keys, token files, and credential files
+
+`.env.example` remains allowed because it is documentation. Branch, staging, commit, push, and PR actions use the existing permission checker and command policy before running Git or `gh`. Destructive operations such as force push, hard reset, branch deletion, rebase, and git clean remain blocked by default.
+
+Commit message generation uses the active ProviderRouter and budget checks with the current staged diff when available, or the unstaged diff as a fallback. If no provider is available, write the commit message manually in the command prompt or sidebar flow.
+
+`Prepare Pull Request` creates a PR title/body from the generated commit message and changed files. If the GitHub CLI (`gh`) is available, Borger can run `gh pr create` after `git_push` and terminal authorization. If `gh` is missing, Borger prints manual PR instructions instead.
+
+Phase 11 does not add SSH, remote server operations, deploy automation, force push, history rewriting, or automatic commits from Auto Mode.
 
 ## Permission System
 
@@ -245,4 +279,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 8: Controlled terminal execution - implemented
 - Phase 9: Fix mode - implemented
 - Phase 10: Controlled Auto Mode - implemented
-- Phase 11+: Not started
+- Phase 11: Git/GitHub workflow - implemented
+- Phase 12+: Not started

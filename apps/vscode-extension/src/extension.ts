@@ -4,6 +4,8 @@ import { registerApplyCurrentPendingChangeCommand } from "./commands/applyCurren
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
 import { registerClearCommandHistoryCommand } from "./commands/clearCommandHistory";
 import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
+import { registerCreateGitBranchCommand } from "./commands/createGitBranch";
+import { registerCreateGitCommitCommand } from "./commands/createGitCommit";
 import { registerExplainLastErrorCommand } from "./commands/explainLastError";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
 import { registerFixCurrentFileCommand } from "./commands/fixCurrentFile";
@@ -12,11 +14,15 @@ import { registerFixLastCommandCommand } from "./commands/fixLastCommand";
 import { registerFixSelectionCommand } from "./commands/fixSelection";
 import { registerGenerateTestsCommand } from "./commands/generateTests";
 import { registerGenerateProposedChangesCommand } from "./commands/generateProposedChanges";
+import { registerGenerateCommitMessageCommand } from "./commands/generateCommitMessage";
+import { registerGitStatusCommand } from "./commands/gitStatus";
 import { registerCheckProviderBudgetsCommand } from "./commands/checkProviderBudgets";
 import { registerInspectWorkspaceCommand } from "./commands/inspectWorkspace";
 import { registerManageProvidersCommand } from "./commands/manageProviders";
 import { registerOpenAgentCommand } from "./commands/openAgent";
 import { registerPlanTaskCommand } from "./commands/planTask";
+import { registerPreparePullRequestCommand } from "./commands/preparePullRequest";
+import { registerPushGitBranchCommand } from "./commands/pushGitBranch";
 import { registerRefactorSelectionCommand } from "./commands/refactorSelection";
 import { registerResetProviderStateCommand } from "./commands/resetProviderState";
 import { registerRevertLastApplyCommand } from "./commands/revertLastApply";
@@ -30,6 +36,7 @@ import { registerShowPendingChangesCommand } from "./commands/showPendingChanges
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
 import { registerStopAutoModeCommand } from "./commands/stopAutoMode";
+import { registerStageGitChangesCommand } from "./commands/stageGitChanges";
 import { registerSwitchProviderCommand } from "./commands/switchProvider";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
 import { registerUpdatePermissionProfileCommand } from "./commands/updatePermissionProfile";
@@ -65,6 +72,13 @@ export function activate(context: vscode.ExtensionContext): void {
     registerRunAutoModeCommand(output, agentPanel),
     registerStopAutoModeCommand(output, agentPanel),
     registerShowAutoModeStatusCommand(output, agentPanel),
+    registerGitStatusCommand(output, agentPanel),
+    registerCreateGitBranchCommand(output, agentPanel),
+    registerStageGitChangesCommand(output, agentPanel),
+    registerGenerateCommitMessageCommand(output, agentPanel),
+    registerCreateGitCommitCommand(output, agentPanel),
+    registerPushGitBranchCommand(output, agentPanel),
+    registerPreparePullRequestCommand(output, agentPanel),
     registerFixDiagnosticsCommand(output, agentPanel),
     registerFixLastCommandCommand(output, agentPanel),
     registerFixCurrentFileCommand(output, agentPanel),

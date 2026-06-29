@@ -31,6 +31,7 @@ import {
 import { PlanTaskResult, planTask } from "../agent/planner";
 import { getBorgerConfig } from "../config";
 import { assertAuthorized, authorizeAction } from "../permissions/authorization";
+import { logAction } from "../permissions/actionLogger";
 import { loadPermissionState } from "../permissions/permissionState";
 import { ProviderRouter } from "../providers/providerRouter";
 import { clearCommandHistory, getCommandHistory } from "../terminal/commandHistory";
@@ -39,6 +40,19 @@ import { formatCommandResultForOutput, formatCommandHistoryForOutput } from "../
 import { formatPendingChangesForOutput } from "../ui/diffProvider";
 import { formatFixModeResultForOutput } from "../ui/fixResultFormatter";
 import { formatAutoModeStateForOutput } from "../ui/autoModeFormatter";
+import { generateCommitMessageWithModel } from "../git/commitMessage";
+import { preparePullRequestWithGitHubCli } from "../git/githubCli";
+import {
+  createGitBranch as createGitBranchWorkflow,
+  createGitCommit as createGitCommitWorkflow,
+  getGitWorkflowState,
+  pushGitBranch as pushGitBranchWorkflow,
+  refreshGitWorkflowState,
+  setGeneratedCommitMessage,
+  setPullRequestPreparation,
+  stageGitFiles
+} from "../git/gitWorkflow";
+import { formatGitWorkflowStateForOutput } from "../ui/gitWorkflowFormatter";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -76,6 +90,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postCommandHistory();
     void this.postFixStatus();
     this.postAutoModeState();
+    this.postGitWorkflowState();
   }
 
   async focus(): Promise<void> {
@@ -117,6 +132,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
   postAutoModeState(state: AutoModeRunState = getAutoModeState()): void {
     this.view?.webview.postMessage({ type: "autoModeState", autoMode: state });
+  }
+
+  postGitWorkflowState(): void {
+    this.view?.webview.postMessage({ type: "gitWorkflowState", git: getGitWorkflowState() });
   }
 
   private postFixResult(result: Awaited<ReturnType<typeof generateDiagnosticsFix>>): void {
@@ -189,6 +208,131 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.output.appendLine(formatAutoModeStateForOutput(result));
     this.postAutoModeState(result);
     this.postState("Auto Mode stop requested");
+  }
+
+  async refreshGitStatus(): Promise<void> {
+    this.postState("Refreshing Git status...");
+    const state = await refreshGitWorkflowState();
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(state));
+    this.postGitWorkflowState();
+  }
+
+  async createGitBranch(branchName?: string): Promise<void> {
+    const name =
+      branchName ||
+      (await vscode.window.showInputBox({
+        title: "Borger Create Git Branch",
+        prompt: "Enter a safe new branch name.",
+        ignoreFocusOut: true
+      }));
+    if (!name) {
+      return;
+    }
+    this.postState("Creating Git branch...");
+    const state = await createGitBranchWorkflow(name);
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(state));
+    this.postGitWorkflowState();
+  }
+
+  async stageAllSafeGitChanges(): Promise<void> {
+    this.postState("Staging all safe Git changes...");
+    const state = await refreshGitWorkflowState();
+    const updated = await stageGitFiles(state.safeStageableFiles.map((file) => file.path));
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(updated));
+    this.postGitWorkflowState();
+  }
+
+  async stageSelectedGitChanges(): Promise<void> {
+    const state = await refreshGitWorkflowState();
+    const selected = await vscode.window.showQuickPick(
+      state.safeStageableFiles.map((file) => ({
+        label: file.path,
+        description: `${file.indexStatus}${file.workingTreeStatus}`,
+        file
+      })),
+      {
+        title: "Borger Stage Git Changes",
+        placeHolder: "Select safe files to stage",
+        canPickMany: true
+      }
+    );
+    if (!selected || selected.length === 0) {
+      this.postGitWorkflowState();
+      return;
+    }
+    this.postState("Staging selected Git changes...");
+    const updated = await stageGitFiles(selected.map((item) => item.file.path));
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(updated));
+    this.postGitWorkflowState();
+  }
+
+  async generateGitCommitMessage(): Promise<void> {
+    this.postState("Generating commit message...");
+    const workspaceFolder = this.requireWorkspaceFolder();
+    const state = await refreshGitWorkflowState();
+    const message = await generateCommitMessageWithModel(this.context, workspaceFolder, state);
+    const updated = setGeneratedCommitMessage(message);
+    const permissionState = await loadPermissionState();
+    await logAction({
+      actionType: "git_commit_message_generated",
+      allowed: true,
+      requiresConfirmation: false,
+      reason: "Generated commit message through provider router.",
+      profile: permissionState.profile.id,
+      status: "succeeded"
+    });
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(updated));
+    this.postGitWorkflowState();
+  }
+
+  async setGitCommitMessage(message: string): Promise<void> {
+    const updated = setGeneratedCommitMessage(message);
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(updated));
+    this.postGitWorkflowState();
+  }
+
+  async createGitCommit(message?: string): Promise<void> {
+    const commitMessage =
+      message ||
+      getGitWorkflowState().generatedCommitMessage ||
+      (await vscode.window.showInputBox({
+        title: "Borger Create Git Commit",
+        prompt: "Enter a commit message.",
+        ignoreFocusOut: true
+      }));
+    if (!commitMessage) {
+      return;
+    }
+    this.postState("Creating Git commit...");
+    const state = await createGitCommitWorkflow(commitMessage);
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(state));
+    this.postGitWorkflowState();
+  }
+
+  async pushGitBranch(): Promise<void> {
+    this.postState("Pushing Git branch...");
+    const state = await pushGitBranchWorkflow();
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(state));
+    this.postGitWorkflowState();
+  }
+
+  async preparePullRequest(): Promise<void> {
+    this.postState("Preparing pull request...");
+    const workspaceFolder = this.requireWorkspaceFolder();
+    const state = await refreshGitWorkflowState();
+    const pullRequest = await preparePullRequestWithGitHubCli(workspaceFolder, state);
+    const updated = setPullRequestPreparation(pullRequest);
+    this.output.show(true);
+    this.output.appendLine(formatGitWorkflowStateForOutput(updated));
+    this.postGitWorkflowState();
   }
 
   async applyApprovedChanges(): Promise<void> {
@@ -352,6 +496,94 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     if (message.type === "refreshAutoModeStatus") {
       this.postAutoModeState();
+      return;
+    }
+
+    if (message.type === "refreshGitStatus") {
+      try {
+        await this.refreshGitStatus();
+      } catch (error) {
+        this.postState("Git status failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "createGitBranch") {
+      try {
+        await this.createGitBranch();
+      } catch (error) {
+        this.postState("Create Git branch failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "stageSelectedGitChanges") {
+      try {
+        await this.stageSelectedGitChanges();
+      } catch (error) {
+        this.postState("Stage Git changes failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "stageAllGitChanges") {
+      try {
+        await this.stageAllSafeGitChanges();
+      } catch (error) {
+        this.postState("Stage all Git changes failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "generateCommitMessage") {
+      try {
+        await this.generateGitCommitMessage();
+      } catch (error) {
+        this.postState("Generate commit message failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "createGitCommit") {
+      try {
+        await this.createGitCommit();
+      } catch (error) {
+        this.postState("Create Git commit failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "pushGitBranch") {
+      try {
+        await this.pushGitBranch();
+      } catch (error) {
+        this.postState("Push Git branch failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "preparePullRequest") {
+      try {
+        await this.preparePullRequest();
+      } catch (error) {
+        this.postState("Prepare pull request failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
       return;
     }
 
@@ -632,6 +864,23 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     </section>
 
     <section class="output">
+      <div class="section-title">
+        <h2>Git Workflow</h2>
+        <button id="gitRefreshButton">Refresh</button>
+      </div>
+      <div class="actions">
+        <button id="createBranchButton">Create Branch</button>
+        <button id="stageSelectedButton">Stage Selected</button>
+        <button id="stageAllButton">Stage All Safe Files</button>
+        <button id="generateCommitMessageButton">Generate Commit Message</button>
+        <button id="createCommitButton">Commit</button>
+        <button id="pushBranchButton">Push</button>
+        <button id="preparePrButton">Prepare Pull Request</button>
+      </div>
+      <div id="gitWorkflowOutput" class="git-output empty">Git status has not been loaded.</div>
+    </section>
+
+    <section class="output">
       <h2>Plan</h2>
       <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
     </section>
@@ -687,6 +936,14 @@ export class AgentPanel implements vscode.WebviewViewProvider {
   <script src="${scriptUri}"></script>
 </body>
 </html>`;
+  }
+
+  private requireWorkspaceFolder(): vscode.WorkspaceFolder {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+      throw new Error("Open a workspace folder before using Git workflow.");
+    }
+    return workspaceFolder;
   }
 }
 

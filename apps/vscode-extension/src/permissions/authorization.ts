@@ -1,5 +1,5 @@
 import { logAction } from "./actionLogger";
-import { classifyCommand, isObviousDestructiveCommand } from "./commandPolicy";
+import { classifyCommand, isObviousDestructiveCommand, isReadOnlyGitInspectionCommand } from "./commandPolicy";
 import { loadPermissionState, PermissionState } from "./permissionState";
 import { PermissionProfileId } from "./permissionProfiles";
 
@@ -159,6 +159,17 @@ function evaluateTerminalAuthorization(state: PermissionState, context: Authoriz
     sshHost: context.sshHost,
     cwd: context.cwd
   };
+  const command = context.command ?? "";
+
+  if (isReadOnlyGitInspectionCommand(command) && (state.capabilities.canUseGit || state.capabilities.canReadWorkspace)) {
+    const policy = classifyCommand(command, state);
+    return {
+      ...base,
+      allowed: policy.classification !== "blocked",
+      requiresConfirmation: false,
+      reason: policy.classification === "blocked" ? policy.reason : "Read-only git inspection is allowed."
+    };
+  }
 
   if (!state.capabilities.canRunTerminal) {
     return {
@@ -169,7 +180,6 @@ function evaluateTerminalAuthorization(state: PermissionState, context: Authoriz
     };
   }
 
-  const command = context.command ?? "";
   if (isObviousDestructiveCommand(command) && !state.capabilities.canRunDestructiveCommands) {
     return {
       ...base,

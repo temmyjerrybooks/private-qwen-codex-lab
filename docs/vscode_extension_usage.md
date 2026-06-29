@@ -275,7 +275,62 @@ Allowed verification commands are exact-match controlled by `borger.autoAllowedV
 - `pnpm test`
 - `python -m py_compile`
 
-Auto Mode will not commit, push, create PRs, use SSH, run remote operations, or deploy. Those workflows come later.
+Auto Mode will not commit, push, create PRs, use SSH, run remote operations, or deploy. Git and GitHub actions are manual Phase 11 workflows.
+
+## Git and GitHub Workflow
+
+Phase 11 adds local Git/GitHub workflow support while keeping dangerous operations blocked.
+
+Run:
+
+```text
+Borger: Git Status
+Borger: Create Git Branch
+Borger: Stage Git Changes
+Borger: Generate Commit Message
+Borger: Create Git Commit
+Borger: Push Git Branch
+Borger: Prepare Pull Request
+```
+
+The sidebar Git Workflow section can refresh status, create a branch, stage selected files, stage all safe files, generate a commit message, create a commit, push the current branch, and prepare a pull request.
+
+Safe workflow:
+
+1. Run `Borger: Git Status`.
+2. Create a feature branch with `Borger: Create Git Branch`.
+3. Stage selected files or stage all safe files.
+4. Generate a commit message, or type one manually.
+5. Create the commit after reviewing staged files.
+6. Push the branch after confirmation.
+7. Prepare a pull request.
+
+Protected files are never staged by Borger:
+
+- `.borger/providers.local.json`
+- `.borger/secrets.local.json`
+- `.borger/permissions.local.json`
+- `.borger/action-log.jsonl`
+- `.borger/usage-ledger.jsonl`
+- `.borger/provider-state.json`
+- `.borger/backups/`
+- `.env`, `.env.local`, private keys, token files, and credential files
+
+`.env.example` is allowed. Staging filters protected files even when using "stage all safe files".
+
+Authorization behavior:
+
+- `git_status` is checked before read-only Git status.
+- `git_commit` is checked before branch creation, staging, and commits.
+- `git_push` is checked before push and GitHub PR creation.
+- `run_terminal` and the command policy are checked before every Git or GitHub CLI command.
+- confirmation is required for branch, staging, commit, push, and PR execution when the active profile or command policy requires it.
+
+Commit message generation uses the active routed provider and budget checks. It prefers the staged diff and falls back to the unstaged diff. If providers are paused, over budget, or unavailable, write the commit message manually.
+
+`Borger: Prepare Pull Request` uses the GitHub CLI (`gh`) when available. If `gh` is missing, Borger prints a PR title/body and manual instructions so you can open the PR yourself.
+
+Phase 11 still does not do force push, hard reset, rebase, git clean, branch deletion, SSH, remote server operations, deployment automation, or automatic commits from Auto Mode.
 
 ## Commands
 
@@ -287,6 +342,13 @@ Auto Mode will not commit, push, create PRs, use SSH, run remote operations, or 
 - `Borger: Run Auto Mode`
 - `Borger: Stop Auto Mode`
 - `Borger: Show Auto Mode Status`
+- `Borger: Git Status`
+- `Borger: Create Git Branch`
+- `Borger: Stage Git Changes`
+- `Borger: Generate Commit Message`
+- `Borger: Create Git Commit`
+- `Borger: Push Git Branch`
+- `Borger: Prepare Pull Request`
 - `Borger: Fix Diagnostics`
 - `Borger: Fix Last Failed Command`
 - `Borger: Fix Current File`
