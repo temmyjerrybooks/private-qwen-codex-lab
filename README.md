@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Later phases add remote ops, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Phase 12 adds controlled SSH and Remote Ops. Later phases add memory and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop. Phase 11 adds reviewed branch, staging, commit, push, and pull-request preparation workflows.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop. Phase 11 adds reviewed branch, staging, commit, push, and pull-request preparation workflows. Phase 12 adds allowlisted SSH host config, safe remote commands, remote output capture, and remote project inspection.
 
 ## Quick Start
 
@@ -167,7 +167,7 @@ Fix Mode collects VS Code diagnostics, active-file context, selected text, works
 
 Fix Mode does not apply edits automatically. All file writes still go through Phase 7 approval and safe apply. Suggested verification commands are shown for manual execution through Phase 8 terminal controls. `Explain Last Error` is explanation-only and never creates pending changes.
 
-The dedicated GitHub push workflow, SSH, and deployment automation come later.
+SSH operations are handled by the controlled Remote Ops workflow in Phase 12. Deployment automation still comes later.
 
 ## Controlled Auto Mode
 
@@ -239,7 +239,60 @@ Commit message generation uses the active ProviderRouter and budget checks with 
 
 `Prepare Pull Request` creates a PR title/body from the generated commit message and changed files. If the GitHub CLI (`gh`) is available, Borger can run `gh pr create` after `git_push` and terminal authorization. If `gh` is missing, Borger prints manual PR instructions instead.
 
-Phase 11 does not add SSH, remote server operations, deploy automation, force push, history rewriting, or automatic commits from Auto Mode.
+Phase 11 does not add deploy automation, force push, history rewriting, or automatic commits from Auto Mode.
+
+## Remote Ops
+
+Phase 12 adds controlled SSH and remote server operations through:
+
+- `Borger: Show Remote Hosts`
+- `Borger: Test SSH Connection`
+- `Borger: Run Remote Command`
+- `Borger: Inspect Remote Project`
+- `Borger: Show Remote History`
+- the Remote Ops section in the Borger sidebar
+
+Remote hosts are configured in this ignored local file:
+
+```text
+.borger/remote-hosts.local.json
+```
+
+Example:
+
+```json
+{
+  "hosts": [
+    {
+      "id": "staging",
+      "label": "Staging Server",
+      "host": "example.com",
+      "port": 22,
+      "username": "ubuntu",
+      "authMode": "ssh-agent",
+      "defaultRemoteCwd": "/var/www/app",
+      "allowedRemoteCwds": ["/var/www/app"],
+      "enabled": true
+    }
+  ]
+}
+```
+
+Borger never stores private keys in the repo and never reads private key contents. Prefer `ssh-agent` or existing local SSH config. If `private-key-path` is used, only the local path belongs in the ignored config file.
+
+Remote Ops requires `canUseSSH`, an enabled host from the local allowlist, and a remote cwd inside `allowedRemoteCwds`. Every remote command checks `ssh_command`, then the local `run_terminal` transport check, then the remote command policy. Risky commands require confirmation; destructive commands and commands that read `.env`, tokens, credentials, or private keys are blocked.
+
+Safe examples include `pwd`, `ls -la`, `git status`, `git branch --show-current`, `git log --oneline -5`, `cat package.json`, `npm run build`, `npm test`, `docker ps`, `docker compose ps`, `pm2 status`, and `systemctl status <service>`.
+
+Confirmation-gated examples include installs, `docker compose up/down`, `pm2 restart`, `systemctl restart/reload`, `modal deploy`, `git pull`, `git fetch`, `git checkout`, and `git merge`.
+
+Blocked examples include `rm -rf`, `sudo rm`, `mkfs`, shutdown/reboot commands, user deletion, broad `chmod`/`chown`, `git reset --hard`, `git clean -fd`, forced push, `curl ... | sh`, `wget ... | sh`, and secret/credential reads.
+
+`Borger: Inspect Remote Project` runs only safe read-oriented commands such as `pwd`, `ls -la`, git status/branch/log checks, package.json detection, Docker-file hints, and PM2 config hints. It does not copy large remote files and does not read remote secrets.
+
+Phase 12 does not add deployment automation, SSH auto mode, remote file editing, secret syncing, host scanning, brute forcing, or offensive security behavior.
+
+Next, Phase 13 is expected to focus on polish and packaging after the remaining memory/project-notes scope is handled.
 
 ## Permission System
 
@@ -280,4 +333,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 9: Fix mode - implemented
 - Phase 10: Controlled Auto Mode - implemented
 - Phase 11: Git/GitHub workflow - implemented
-- Phase 12+: Not started
+- Phase 12: SSH and Remote Ops - implemented
+- Phase 13+: Not started

@@ -121,6 +121,20 @@ http://localhost:4000/v1
 - If `gh pr create` fails with authentication errors, run `gh auth status` or `gh auth login` outside Borger.
 - Force push, hard reset, rebase, branch deletion, and git clean are blocked by default.
 
+## Remote Ops Issues
+
+- If `Borger: Show Remote Hosts` opens a disabled example, edit `.borger/remote-hosts.local.json`, add your authorized host, and set `enabled` to true only after review.
+- If the remote config is ignored by git, that is expected. It can contain hostnames, usernames, cwd paths, and optional private key paths.
+- If `Borger: Test SSH Connection` is blocked, run `Borger: Show Permissions` and confirm `canUseSSH` is true. The `remote_ops` profile is intended for SSH workflows.
+- If the host is blocked, confirm it is present and enabled in `.borger/remote-hosts.local.json`.
+- If the cwd is blocked, confirm the requested remote cwd is inside one of the host's `allowedRemoteCwds`.
+- If SSH auth fails, verify your local `ssh-agent`, SSH config, username, host, port, and network access outside Borger first.
+- If a command is blocked, check the Remote Ops policy. Secret reads, destructive commands, forced git operations, shutdown/reboot, broad ownership/permission changes, and `curl`/`wget` piped to a shell are blocked.
+- If Borger asks for confirmation, the command is risky, the SSH profile requires confirmation, or local `ssh` transport requires terminal confirmation.
+- If `Inspect Remote Project` reports failures for optional files, that can be normal when `package.json`, Docker files, or PM2 config files are absent.
+- If output is too large or truncated, rerun a narrower read-only command.
+- Remote history is in memory for the current VS Code session. Remote authorization and lifecycle events are logged to `.borger/action-log.jsonl`.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

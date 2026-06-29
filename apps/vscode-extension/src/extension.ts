@@ -17,6 +17,7 @@ import { registerGenerateProposedChangesCommand } from "./commands/generatePropo
 import { registerGenerateCommitMessageCommand } from "./commands/generateCommitMessage";
 import { registerGitStatusCommand } from "./commands/gitStatus";
 import { registerCheckProviderBudgetsCommand } from "./commands/checkProviderBudgets";
+import { registerInspectRemoteProjectCommand } from "./commands/inspectRemoteProject";
 import { registerInspectWorkspaceCommand } from "./commands/inspectWorkspace";
 import { registerManageProvidersCommand } from "./commands/manageProviders";
 import { registerOpenAgentCommand } from "./commands/openAgent";
@@ -28,6 +29,7 @@ import { registerResetProviderStateCommand } from "./commands/resetProviderState
 import { registerRevertLastApplyCommand } from "./commands/revertLastApply";
 import { registerRunAgentTaskCommand } from "./commands/runAgentTask";
 import { registerRunAutoModeCommand } from "./commands/runAutoMode";
+import { registerRunRemoteCommandCommand } from "./commands/runRemoteCommand";
 import { registerRunSuggestedCommandCommand } from "./commands/runSuggestedCommand";
 import { registerRunTerminalCommandCommand } from "./commands/runTerminalCommand";
 import { registerShowAutoModeStatusCommand } from "./commands/showAutoModeStatus";
@@ -35,9 +37,12 @@ import { registerShowCommandHistoryCommand } from "./commands/showCommandHistory
 import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
+import { registerShowRemoteHistoryCommand } from "./commands/showRemoteHistory";
+import { registerShowRemoteHostsCommand } from "./commands/showRemoteHosts";
 import { registerStopAutoModeCommand } from "./commands/stopAutoMode";
 import { registerStageGitChangesCommand } from "./commands/stageGitChanges";
 import { registerSwitchProviderCommand } from "./commands/switchProvider";
+import { registerTestSshConnectionCommand } from "./commands/testSshConnection";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
 import { registerUpdatePermissionProfileCommand } from "./commands/updatePermissionProfile";
 import { AgentPanel } from "./panels/AgentPanel";
@@ -79,6 +84,11 @@ export function activate(context: vscode.ExtensionContext): void {
     registerCreateGitCommitCommand(output, agentPanel),
     registerPushGitBranchCommand(output, agentPanel),
     registerPreparePullRequestCommand(output, agentPanel),
+    registerShowRemoteHostsCommand(output, agentPanel),
+    registerTestSshConnectionCommand(output, agentPanel),
+    registerRunRemoteCommandCommand(output, agentPanel),
+    registerInspectRemoteProjectCommand(output, agentPanel),
+    registerShowRemoteHistoryCommand(output, agentPanel),
     registerFixDiagnosticsCommand(output, agentPanel),
     registerFixLastCommandCommand(output, agentPanel),
     registerFixCurrentFileCommand(output, agentPanel),

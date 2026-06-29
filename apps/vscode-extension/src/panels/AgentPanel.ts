@@ -53,6 +53,21 @@ import {
   stageGitFiles
 } from "../git/gitWorkflow";
 import { formatGitWorkflowStateForOutput } from "../ui/gitWorkflowFormatter";
+import { getEnabledRemoteHosts, loadRemoteHostsConfig, openRemoteHostsConfig } from "../remote/remoteConfig";
+import { getRemoteHistory } from "../remote/remoteHistory";
+import {
+  getRemoteOpsState,
+  inspectRemoteProject as inspectRemoteProjectRunner,
+  runRemoteCommand as runRemoteCommandRunner,
+  testSshConnection as testSshConnectionRunner
+} from "../remote/sshRunner";
+import { RemoteHostConfig } from "../remote/remoteTypes";
+import {
+  formatRemoteCommandResultForOutput,
+  formatRemoteHistoryForOutput,
+  formatRemoteInspectionForOutput,
+  formatRemoteOpsStateForOutput
+} from "../ui/remoteOpsFormatter";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -91,6 +106,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     void this.postFixStatus();
     this.postAutoModeState();
     this.postGitWorkflowState();
+    void this.postRemoteOpsState();
   }
 
   async focus(): Promise<void> {
@@ -136,6 +152,18 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
   postGitWorkflowState(): void {
     this.view?.webview.postMessage({ type: "gitWorkflowState", git: getGitWorkflowState() });
+  }
+
+  async postRemoteOpsState(): Promise<void> {
+    try {
+      const remoteOps = await getRemoteOpsState();
+      this.view?.webview.postMessage({ type: "remoteOpsState", remoteOps });
+    } catch (error) {
+      this.view?.webview.postMessage({
+        type: "remoteOpsState",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   private postFixResult(result: Awaited<ReturnType<typeof generateDiagnosticsFix>>): void {
@@ -333,6 +361,81 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.output.show(true);
     this.output.appendLine(formatGitWorkflowStateForOutput(updated));
     this.postGitWorkflowState();
+  }
+
+  async showRemoteHosts(): Promise<void> {
+    this.postState("Opening remote hosts config...");
+    await openRemoteHostsConfig();
+    const state = await getRemoteOpsState();
+    this.output.show(true);
+    this.output.appendLine(formatRemoteOpsStateForOutput(state));
+    await this.postRemoteOpsState();
+  }
+
+  async testSshConnection(hostId?: string, remoteCwd?: string): Promise<void> {
+    const host = await this.resolveRemoteHost(hostId);
+    const cwd = remoteCwd || (await this.promptRemoteCwd(host, "Borger Test SSH Connection"));
+    if (!cwd) {
+      return;
+    }
+    this.postState("Testing SSH connection...");
+    const result = await testSshConnectionRunner(host.id, cwd);
+    this.output.show(true);
+    this.output.appendLine(formatRemoteCommandResultForOutput(result));
+    await this.postRemoteOpsState();
+    await this.postPermissionStatus();
+  }
+
+  async runRemoteCommand(hostId?: string, command?: string, remoteCwd?: string): Promise<void> {
+    const host = await this.resolveRemoteHost(hostId);
+    const cwd = remoteCwd || (await this.promptRemoteCwd(host, "Borger Run Remote Command"));
+    if (!cwd) {
+      return;
+    }
+    const remoteCommand =
+      command ||
+      (await vscode.window.showInputBox({
+        title: "Borger Run Remote Command",
+        prompt: "Enter a safe remote command for the selected allowlisted host.",
+        placeHolder: "git status --short",
+        ignoreFocusOut: true
+      }));
+    if (!remoteCommand?.trim()) {
+      return;
+    }
+
+    this.postState("Running remote command...");
+    const result = await runRemoteCommandRunner({
+      hostId: host.id,
+      command: remoteCommand,
+      remoteCwd: cwd
+    });
+    this.output.show(true);
+    this.output.appendLine(formatRemoteCommandResultForOutput(result));
+    await this.postRemoteOpsState();
+    await this.postPermissionStatus();
+  }
+
+  async inspectRemoteProject(hostId?: string, remoteCwd?: string): Promise<void> {
+    const host = await this.resolveRemoteHost(hostId);
+    const cwd = remoteCwd || (await this.promptRemoteCwd(host, "Borger Inspect Remote Project"));
+    if (!cwd) {
+      return;
+    }
+    this.postState("Inspecting remote project...");
+    const inspection = await inspectRemoteProjectRunner(host.id, cwd);
+    this.output.show(true);
+    this.output.appendLine(formatRemoteInspectionForOutput(inspection));
+    await this.postRemoteOpsState();
+    await this.postPermissionStatus();
+  }
+
+  async showRemoteHistory(): Promise<void> {
+    const history = getRemoteHistory();
+    this.output.show(true);
+    this.output.appendLine(formatRemoteHistoryForOutput(history));
+    await this.postRemoteOpsState();
+    this.postState("Remote history shown");
   }
 
   async applyApprovedChanges(): Promise<void> {
@@ -584,6 +687,63 @@ export class AgentPanel implements vscode.WebviewViewProvider {
           error: error instanceof Error ? error.message : String(error)
         });
       }
+      return;
+    }
+
+    if (message.type === "showRemoteHosts") {
+      try {
+        await this.showRemoteHosts();
+      } catch (error) {
+        this.postState("Show remote hosts failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "refreshRemoteOps") {
+      await this.postRemoteOpsState();
+      return;
+    }
+
+    if (message.type === "testSshConnection") {
+      try {
+        await this.testSshConnection(message.hostId, message.remoteCwd);
+      } catch (error) {
+        this.postState("Test SSH connection failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postRemoteOpsState();
+      }
+      return;
+    }
+
+    if (message.type === "runRemoteCommand" && typeof message.command === "string") {
+      try {
+        await this.runRemoteCommand(message.hostId, message.command, message.remoteCwd);
+      } catch (error) {
+        this.postState("Remote command failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postRemoteOpsState();
+      }
+      return;
+    }
+
+    if (message.type === "inspectRemoteProject") {
+      try {
+        await this.inspectRemoteProject(message.hostId, message.remoteCwd);
+      } catch (error) {
+        this.postState("Inspect remote project failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postRemoteOpsState();
+      }
+      return;
+    }
+
+    if (message.type === "showRemoteHistory") {
+      await this.showRemoteHistory();
       return;
     }
 
@@ -881,6 +1041,34 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     </section>
 
     <section class="output">
+      <div class="section-title">
+        <h2>Remote Ops</h2>
+        <button id="remoteRefreshButton">Refresh</button>
+      </div>
+      <div class="remote-input-grid">
+        <label>
+          Host
+          <select id="remoteHostSelect"></select>
+        </label>
+        <label>
+          Remote cwd
+          <input id="remoteCwdInput" type="text" placeholder="/var/www/app">
+        </label>
+      </div>
+      <div class="terminal-input-row">
+        <input id="remoteCommandInput" type="text" placeholder="git status --short">
+        <button id="runRemoteCommandButton">Run Remote Command</button>
+      </div>
+      <div class="actions">
+        <button id="showRemoteHostsButton">Show Remote Hosts</button>
+        <button id="testSshButton">Test SSH Connection</button>
+        <button id="inspectRemoteButton">Inspect Remote Project</button>
+        <button id="showRemoteHistoryButton">Show Remote History</button>
+      </div>
+      <div id="remoteOpsOutput" class="remote-output empty">Remote hosts have not been loaded.</div>
+    </section>
+
+    <section class="output">
       <h2>Plan</h2>
       <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
     </section>
@@ -938,10 +1126,57 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 </html>`;
   }
 
+  private async resolveRemoteHost(hostId?: string): Promise<RemoteHostConfig> {
+    const loaded = await loadRemoteHostsConfig();
+    const enabledHosts = getEnabledRemoteHosts(loaded.config);
+    if (enabledHosts.length === 0) {
+      await openRemoteHostsConfig();
+      throw new Error("No enabled remote host is configured. Update .borger/remote-hosts.local.json and set enabled to true.");
+    }
+
+    if (hostId) {
+      const selected = enabledHosts.find((host) => host.id === hostId);
+      if (!selected) {
+        throw new Error(`Remote host '${hostId}' is not enabled or not configured.`);
+      }
+      return selected;
+    }
+
+    if (enabledHosts.length === 1) {
+      return enabledHosts[0];
+    }
+
+    const picked = await vscode.window.showQuickPick(
+      enabledHosts.map((host) => ({
+        label: host.label,
+        description: host.id,
+        detail: `${host.username ? `${host.username}@` : ""}${host.host}:${host.port} cwd=${host.defaultRemoteCwd}`,
+        host
+      })),
+      {
+        title: "Borger Remote Host",
+        placeHolder: "Select an enabled allowlisted SSH host"
+      }
+    );
+    if (!picked) {
+      throw new Error("No remote host selected.");
+    }
+    return picked.host;
+  }
+
+  private async promptRemoteCwd(host: RemoteHostConfig, title: string): Promise<string | undefined> {
+    return vscode.window.showInputBox({
+      title,
+      prompt: `Remote working directory for ${host.label}. Must be inside allowedRemoteCwds.`,
+      value: host.defaultRemoteCwd,
+      ignoreFocusOut: true
+    });
+  }
+
   private requireWorkspaceFolder(): vscode.WorkspaceFolder {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      throw new Error("Open a workspace folder before using Git workflow.");
+      throw new Error("Open a workspace folder before using Borger workflow.");
     }
     return workspaceFolder;
   }
@@ -954,6 +1189,8 @@ interface WebviewMessage {
   commandId?: string;
   command?: string;
   mode?: string;
+  hostId?: string;
+  remoteCwd?: string;
 }
 
 function normalizeTerminalMode(value: string | undefined): TerminalExecutionMode {

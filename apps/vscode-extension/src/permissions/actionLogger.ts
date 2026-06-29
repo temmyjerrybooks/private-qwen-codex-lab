@@ -15,6 +15,9 @@ export interface ActionLogEntry {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  hostId?: string;
+  hostLabel?: string;
+  remoteCwd?: string;
   cwd?: string;
   exitCode?: number;
   durationMs?: number;

@@ -105,4 +105,19 @@
 6. Run `Borger: Create Git Commit` only after reviewing the staged file list.
 7. Run `Borger: Push Git Branch` after confirming the branch and remote.
 8. Run `Borger: Prepare Pull Request` to create a PR with GitHub CLI when available, or to print manual PR text when `gh` is not installed.
-9. Keep force pushes, hard resets, rebases, branch deletion, git clean, SSH, remote operations, and deployment automation out of Phase 11.
+9. Keep force pushes, hard resets, rebases, branch deletion, git clean, and deployment automation out of Phase 11.
+
+## Remote Ops Workflow
+
+1. Run `Borger: Show Remote Hosts` to create or open `.borger/remote-hosts.local.json`.
+2. Add only servers you own or are explicitly authorized to operate.
+3. Keep the host disabled until the host, username, cwd, and auth mode are reviewed.
+4. Prefer `ssh-agent` or existing local SSH config; do not commit private keys or secrets.
+5. Set `allowedRemoteCwds` narrowly, such as `/var/www/app`, and keep commands inside those paths.
+6. Use `Borger: Update Permission Profile` and choose `remote_ops`, or explicitly enable `canUseSSH` for a trusted workspace.
+7. Run `Borger: Test SSH Connection` before any remote command.
+8. Run `Borger: Inspect Remote Project` to collect safe read-only project status.
+9. Use `Borger: Run Remote Command` only for reviewed commands.
+10. Review confirmation prompts for installs, restarts, git pulls, Docker changes, and other risky commands.
+11. Use `Borger: Show Remote History` and `.borger/action-log.jsonl` when auditing remote activity.
+12. Keep deployment automation, remote file editing, host scanning, brute forcing, and secret reads out of Phase 12.

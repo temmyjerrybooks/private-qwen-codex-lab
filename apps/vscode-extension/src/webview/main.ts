@@ -21,6 +21,16 @@ const generateCommitMessageButton = document.getElementById("generateCommitMessa
 const createCommitButton = document.getElementById("createCommitButton");
 const pushBranchButton = document.getElementById("pushBranchButton");
 const preparePrButton = document.getElementById("preparePrButton");
+const remoteOpsOutputEl = document.getElementById("remoteOpsOutput");
+const remoteRefreshButton = document.getElementById("remoteRefreshButton");
+const remoteHostSelectEl = document.getElementById("remoteHostSelect") as HTMLSelectElement | null;
+const remoteCwdInputEl = document.getElementById("remoteCwdInput") as HTMLInputElement | null;
+const remoteCommandInputEl = document.getElementById("remoteCommandInput") as HTMLInputElement | null;
+const showRemoteHostsButton = document.getElementById("showRemoteHostsButton");
+const testSshButton = document.getElementById("testSshButton");
+const inspectRemoteButton = document.getElementById("inspectRemoteButton");
+const runRemoteCommandButton = document.getElementById("runRemoteCommandButton");
+const showRemoteHistoryButton = document.getElementById("showRemoteHistoryButton");
 const fixStatusEl = document.getElementById("fixStatus");
 const fixOutputEl = document.getElementById("fixOutput");
 const fixRefreshButton = document.getElementById("fixRefreshButton");
@@ -49,6 +59,8 @@ const runCommandButton = document.getElementById("runCommandButton");
 const showCommandHistoryButton = document.getElementById("showCommandHistoryButton");
 const clearCommandHistoryButton = document.getElementById("clearCommandHistoryButton");
 const commandOutputEl = document.getElementById("commandOutput");
+
+let currentRemoteHosts: RemoteHostConfigMessage[] = [];
 
 inspectButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "inspectWorkspace" });
@@ -104,6 +116,61 @@ pushBranchButton?.addEventListener("click", () => {
 
 preparePrButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "preparePullRequest" });
+});
+
+remoteRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "refreshRemoteOps" });
+});
+
+showRemoteHostsButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showRemoteHosts" });
+});
+
+testSshButton?.addEventListener("click", () => {
+  vscode.postMessage({
+    type: "testSshConnection",
+    hostId: remoteHostSelectEl?.value || undefined,
+    remoteCwd: remoteCwdInputEl?.value || undefined
+  });
+});
+
+inspectRemoteButton?.addEventListener("click", () => {
+  vscode.postMessage({
+    type: "inspectRemoteProject",
+    hostId: remoteHostSelectEl?.value || undefined,
+    remoteCwd: remoteCwdInputEl?.value || undefined
+  });
+});
+
+runRemoteCommandButton?.addEventListener("click", () => {
+  vscode.postMessage({
+    type: "runRemoteCommand",
+    hostId: remoteHostSelectEl?.value || undefined,
+    remoteCwd: remoteCwdInputEl?.value || undefined,
+    command: remoteCommandInputEl?.value ?? ""
+  });
+});
+
+remoteCommandInputEl?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    vscode.postMessage({
+      type: "runRemoteCommand",
+      hostId: remoteHostSelectEl?.value || undefined,
+      remoteCwd: remoteCwdInputEl?.value || undefined,
+      command: remoteCommandInputEl.value
+    });
+  }
+});
+
+showRemoteHistoryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showRemoteHistory" });
+});
+
+remoteHostSelectEl?.addEventListener("change", () => {
+  const selected = currentRemoteHosts.find((host) => host.id === remoteHostSelectEl.value);
+  if (selected && remoteCwdInputEl) {
+    remoteCwdInputEl.value = selected.defaultRemoteCwd;
+  }
 });
 
 fixRefreshButton?.addEventListener("click", () => {
@@ -255,6 +322,11 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     gitWorkflowOutputEl.innerHTML = renderGitWorkflowState(message.git);
   }
 
+  if (message.type === "remoteOpsState" && remoteOpsOutputEl) {
+    remoteOpsOutputEl.classList.toggle("empty", !message.remoteOps || message.remoteOps.history.length === 0);
+    remoteOpsOutputEl.innerHTML = renderRemoteOpsState(message.remoteOps, message.error);
+  }
+
   if (message.type === "fixStatus" && fixStatusEl) {
     fixStatusEl.innerHTML = renderFixStatus(message.fixStatus, message.error);
   }
@@ -279,6 +351,7 @@ interface WebviewResponse {
     | "pendingChanges"
     | "autoModeState"
     | "gitWorkflowState"
+    | "remoteOpsState"
     | "fixStatus"
     | "fixResult"
     | "commandHistory";
@@ -291,6 +364,7 @@ interface WebviewResponse {
   changeSet?: PendingChangeSetMessage;
   autoMode?: AutoModeRunStateMessage;
   git?: GitWorkflowStateMessage;
+  remoteOps?: RemoteOpsStateMessage;
   result?: FixModeResultMessage;
   fixStatus?: FixModeStatusMessage;
   history?: TerminalCommandResultMessage[];
@@ -592,6 +666,67 @@ interface GitWorkflowStateMessage {
   pullRequest?: PullRequestPreparationMessage;
   lastCommand?: GitCommandResultMessage;
   lastError?: string;
+}
+
+interface RemoteHostConfigMessage {
+  id: string;
+  label: string;
+  host: string;
+  port: number;
+  username?: string;
+  authMode: "ssh-agent" | "ssh-config" | "private-key-path";
+  privateKeyPath?: string;
+  defaultRemoteCwd: string;
+  allowedRemoteCwds: string[];
+  enabled: boolean;
+}
+
+interface RemoteConfigLoadResultMessage {
+  config: {
+    hosts: RemoteHostConfigMessage[];
+  };
+  source: "default" | "local" | "malformed";
+  uri: string;
+  warning?: string;
+}
+
+interface RemoteCommandResultMessage {
+  id: string;
+  hostId: string;
+  hostLabel: string;
+  sshHost: string;
+  command: string;
+  remoteCwd: string;
+  startedAt: string;
+  endedAt?: string;
+  durationMs?: number;
+  exitCode?: number;
+  stdout: string;
+  stderr: string;
+  status: "pending" | "running" | "succeeded" | "failed" | "blocked" | "cancelled";
+  reason: string;
+  suggestedNextStep?: string;
+  authorizationDecision: {
+    allowed: boolean;
+    requiresConfirmation: boolean;
+    reason: string;
+  };
+}
+
+interface RemoteInspectionResultMessage {
+  hostId: string;
+  hostLabel: string;
+  remoteCwd: string;
+  inspectedAt: string;
+  results: RemoteCommandResultMessage[];
+  summary: string;
+}
+
+interface RemoteOpsStateMessage {
+  config: RemoteConfigLoadResultMessage;
+  history: RemoteCommandResultMessage[];
+  latestResult?: RemoteCommandResultMessage;
+  latestInspection?: RemoteInspectionResultMessage;
 }
 
 interface TerminalCommandResultMessage {
@@ -968,6 +1103,117 @@ function renderGitWorkflowState(state: GitWorkflowStateMessage | undefined): str
         <h4>Last Git Command</h4>
         ${last}
       </section>
+    </article>`;
+}
+
+function renderRemoteOpsState(state: RemoteOpsStateMessage | undefined, error: string | undefined): string {
+  if (error) {
+    return `<div class="empty">Remote Ops unavailable: ${escapeHtml(error)}</div>`;
+  }
+  if (!state) {
+    updateRemoteHostSelect([]);
+    return '<div class="empty">Remote hosts have not been loaded.</div>';
+  }
+
+  updateRemoteHostSelect(state.config.config.hosts);
+  const enabledHosts = state.config.config.hosts.filter((host) => host.enabled);
+  const hostList = state.config.config.hosts.length > 0
+    ? `<ul class="remote-host-list">${state.config.config.hosts
+        .map(
+          (host) =>
+            `<li class="${host.enabled ? "enabled" : "disabled"}"><strong>${escapeHtml(host.label)}</strong><span>${escapeHtml(
+              `${host.id} - ${host.username ? `${host.username}@` : ""}${host.host}:${host.port} - ${host.enabled ? "enabled" : "disabled"}`
+            )}</span><span>${escapeHtml(`cwd ${host.defaultRemoteCwd}`)}</span></li>`
+        )
+        .join("")}</ul>`
+    : '<p class="muted">No remote hosts configured. Use Show Remote Hosts to create the local config.</p>';
+  const latest = state.latestResult ? renderRemoteResult(state.latestResult) : '<p class="muted">No remote command run this session.</p>';
+  const inspection = state.latestInspection
+    ? `<article class="remote-card">
+        <h4>Latest Inspection</h4>
+        <p>${escapeHtml(state.latestInspection.summary)}</p>
+        <p class="muted">${escapeHtml(`${state.latestInspection.hostLabel} - ${state.latestInspection.remoteCwd} - ${state.latestInspection.inspectedAt}`)}</p>
+        <ul class="remote-history">${state.latestInspection.results
+          .slice(0, 8)
+          .map((result) => `<li class="${escapeHtml(result.status)}">${escapeHtml(`${result.status}: ${result.command}${result.exitCode === undefined ? "" : ` (${result.exitCode})`}`)}</li>`)
+          .join("")}</ul>
+      </article>`
+    : '<p class="muted">No remote inspection run.</p>';
+  const history = state.history.length > 0
+    ? `<ul class="remote-history">${state.history
+        .slice(0, 10)
+        .map(
+          (result) =>
+            `<li class="${escapeHtml(result.status)}"><code>${escapeHtml(result.command)}</code><span>${escapeHtml(
+              `${result.hostId}:${result.remoteCwd} - ${result.status}${result.exitCode === undefined ? "" : ` (${result.exitCode})`}`
+            )}</span></li>`
+        )
+        .join("")}</ul>`
+    : '<p class="muted">No remote history yet.</p>';
+
+  return `
+    <article class="remote-card">
+      <dl class="git-summary">
+        <div><dt>Config</dt><dd>${escapeHtml(state.config.uri)}</dd></div>
+        <div><dt>Source</dt><dd>${escapeHtml(state.config.source)}</dd></div>
+        <div><dt>Hosts</dt><dd>${enabledHosts.length} enabled / ${state.config.config.hosts.length} configured</dd></div>
+        <div><dt>Warning</dt><dd>${escapeHtml(state.config.warning || "none")}</dd></div>
+      </dl>
+      <section class="plan-section">
+        <h4>Hosts</h4>
+        ${hostList}
+      </section>
+      <section class="plan-section">
+        <h4>Latest Output</h4>
+        ${latest}
+      </section>
+      <section class="plan-section">
+        <h4>Inspection</h4>
+        ${inspection}
+      </section>
+      <section class="plan-section">
+        <h4>History</h4>
+        ${history}
+      </section>
+    </article>`;
+}
+
+function updateRemoteHostSelect(hosts: RemoteHostConfigMessage[]): void {
+  currentRemoteHosts = hosts;
+  if (!remoteHostSelectEl) {
+    return;
+  }
+  const previous = remoteHostSelectEl.value;
+  const enabled = hosts.filter((host) => host.enabled);
+  remoteHostSelectEl.innerHTML = enabled
+    .map((host) => `<option value="${escapeHtml(host.id)}">${escapeHtml(`${host.label} (${host.id})`)}</option>`)
+    .join("");
+  const selected = enabled.find((host) => host.id === previous) ?? enabled[0];
+  if (selected) {
+    remoteHostSelectEl.value = selected.id;
+    if (remoteCwdInputEl && !remoteCwdInputEl.value) {
+      remoteCwdInputEl.value = selected.defaultRemoteCwd;
+    }
+  }
+}
+
+function renderRemoteResult(result: RemoteCommandResultMessage): string {
+  return `
+    <article class="remote-result ${escapeHtml(result.status)}">
+      <header class="command-header">
+        <div>
+          <h3>${escapeHtml(result.command)}</h3>
+          <p>${escapeHtml(`${result.hostLabel} - ${result.remoteCwd}`)}</p>
+        </div>
+        <span class="change-status ${escapeHtml(result.status)}">${escapeHtml(result.status)}</span>
+      </header>
+      <dl class="command-meta">
+        <div><dt>Exit</dt><dd>${result.exitCode === undefined ? "n/a" : String(result.exitCode)}</dd></div>
+        <div><dt>Duration</dt><dd>${result.durationMs ?? 0}ms</dd></div>
+        <div><dt>Reason</dt><dd>${escapeHtml(result.reason)}</dd></div>
+      </dl>
+      ${result.stdout ? `<pre class="terminal-block">${escapeHtml(result.stdout)}</pre>` : '<p class="muted">No stdout.</p>'}
+      ${result.stderr ? `<pre class="terminal-block stderr">${escapeHtml(result.stderr)}</pre>` : ""}
     </article>`;
 }
 

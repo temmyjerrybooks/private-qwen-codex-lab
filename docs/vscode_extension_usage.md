@@ -264,7 +264,7 @@ Approval behavior:
 - `plan_only`: Auto Mode can plan, then stops before edits or commands.
 - `edit_with_review`: Auto Mode creates pending diffs and waits for approval before applying.
 - `trusted_workspace` and `full_auto`: Auto Mode can proceed more smoothly only when approval settings allow it.
-- `remote_ops`: remote operations are still not implemented in Phase 10.
+- `remote_ops`: intended for Phase 12 SSH workflows, but still host-allowlisted and confirmation-gated.
 
 Allowed verification commands are exact-match controlled by `borger.autoAllowedVerificationCommands` or `BORGER_AUTO_ALLOWED_VERIFICATION_COMMANDS`. Defaults:
 
@@ -330,7 +330,115 @@ Commit message generation uses the active routed provider and budget checks. It 
 
 `Borger: Prepare Pull Request` uses the GitHub CLI (`gh`) when available. If `gh` is missing, Borger prints a PR title/body and manual instructions so you can open the PR yourself.
 
-Phase 11 still does not do force push, hard reset, rebase, git clean, branch deletion, SSH, remote server operations, deployment automation, or automatic commits from Auto Mode.
+Phase 11 still does not do force push, hard reset, rebase, git clean, branch deletion, deployment automation, or automatic commits from Auto Mode.
+
+## Remote Ops
+
+Phase 12 adds controlled SSH operations for explicitly configured hosts.
+
+Run:
+
+```text
+Borger: Show Remote Hosts
+Borger: Test SSH Connection
+Borger: Run Remote Command
+Borger: Inspect Remote Project
+Borger: Show Remote History
+```
+
+Remote host config is local and ignored by git:
+
+```text
+.borger/remote-hosts.local.json
+```
+
+Example:
+
+```json
+{
+  "hosts": [
+    {
+      "id": "staging",
+      "label": "Staging Server",
+      "host": "example.com",
+      "port": 22,
+      "username": "ubuntu",
+      "authMode": "ssh-agent",
+      "defaultRemoteCwd": "/var/www/app",
+      "allowedRemoteCwds": ["/var/www/app"],
+      "enabled": true
+    }
+  ]
+}
+```
+
+Use `ssh-agent` or existing local SSH config when possible. Do not store private keys in the repo. If `private-key-path` is used, store only the local path in `.borger/remote-hosts.local.json`; Borger does not read private key contents.
+
+Remote Ops safety checks:
+
+- active profile must allow `canUseSSH`
+- host must be enabled in `.borger/remote-hosts.local.json`
+- remote cwd must be inside `allowedRemoteCwds`
+- `ssh_command` authorization must pass
+- local `run_terminal` authorization for the `ssh` transport must pass
+- remote command policy must allow the command
+- risky commands require confirmation
+- destructive or secret-reading commands are blocked
+
+Safe examples:
+
+- `pwd`
+- `ls -la`
+- `git status`
+- `git status --short`
+- `git branch --show-current`
+- `git log --oneline -5`
+- `cat package.json`
+- `npm run build`
+- `npm test`
+- `npm run lint`
+- `npm run typecheck`
+- `docker ps`
+- `docker compose ps`
+- `pm2 status`
+- `systemctl status nginx`
+
+Confirmation-gated examples:
+
+- `npm install`
+- `pnpm install`
+- `yarn install`
+- `pip install`
+- `docker compose up`
+- `docker compose down`
+- `pm2 restart`
+- `systemctl restart`
+- `systemctl reload`
+- `modal deploy`
+- `git pull`
+- `git fetch`
+- `git checkout`
+- `git merge`
+
+Blocked examples:
+
+- `rm -rf`
+- `sudo rm`
+- `mkfs`
+- `shutdown`, `reboot`, `halt`, `poweroff`
+- `userdel`, `passwd`
+- `chmod -R 777 /`
+- `chown -R`
+- `git reset --hard`
+- `git clean -fd`
+- `git push --force`
+- `curl ... | sh`
+- `wget ... | sh`
+- commands reading `.env`, secrets, tokens, credentials, or private keys
+
+`Borger: Inspect Remote Project` runs safe read-only commands only and summarizes the output in the sidebar and output channel. It does not copy large remote files, read secrets, deploy, or edit remote files.
+
+Phase 13 is expected to focus on polish and packaging after the remaining memory/project-notes scope is handled.
 
 ## Commands
 
@@ -349,6 +457,11 @@ Phase 11 still does not do force push, hard reset, rebase, git clean, branch del
 - `Borger: Create Git Commit`
 - `Borger: Push Git Branch`
 - `Borger: Prepare Pull Request`
+- `Borger: Show Remote Hosts`
+- `Borger: Test SSH Connection`
+- `Borger: Run Remote Command`
+- `Borger: Inspect Remote Project`
+- `Borger: Show Remote History`
 - `Borger: Fix Diagnostics`
 - `Borger: Fix Last Failed Command`
 - `Borger: Fix Current File`

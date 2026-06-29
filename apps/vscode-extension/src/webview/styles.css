@@ -470,6 +470,71 @@ code {
   padding: 8px;
 }
 
+.remote-output {
+  min-height: 140px;
+  max-height: 560px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.remote-input-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.remote-input-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.remote-card,
+.remote-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.remote-host-list,
+.remote-history {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.remote-host-list li,
+.remote-history li {
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+
+.remote-host-list span,
+.remote-history span {
+  display: block;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.remote-host-list li.disabled {
+  color: var(--vscode-descriptionForeground);
+}
+
+.remote-history li.failed,
+.remote-history li.blocked {
+  color: var(--vscode-errorForeground);
+}
+
+.remote-history li.succeeded {
+  color: var(--vscode-testing-iconPassed);
+}
+
 .command-output {
   min-height: 120px;
   max-height: 520px;

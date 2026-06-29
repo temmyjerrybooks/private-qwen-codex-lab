@@ -11,5 +11,6 @@ coverage/
 .borger/usage-ledger.jsonl
 .borger/provider-state.json
 .borger/permissions.local.json
+.borger/remote-hosts.local.json
 .borger/action-log.jsonl
 .borger/backups/

@@ -292,13 +292,54 @@
 - Push can set upstream for a branch without one
 - Pull-request preparation uses GitHub CLI when available and prints manual PR text when `gh` is unavailable
 - Git workflow lifecycle events are logged to `.borger/action-log.jsonl`
-- Force push, hard reset, rebase, branch deletion, git clean, SSH, remote ops, and deployment automation remain out of scope
+- Force push, hard reset, rebase, branch deletion, git clean, and deployment automation remain out of scope
 - Existing Plan Mode still works
 - Existing proposed change generation still works
 - Existing safe edit application still works
 - Existing terminal command execution still works
 - Existing Fix Mode still works
 - Existing Auto Mode still works
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
+- `npm run compile` passes
+- `npm run check-types` passes
+
+## Phase 12
+
+- `Borger: Show Remote Hosts` exists
+- `Borger: Test SSH Connection` exists
+- `Borger: Run Remote Command` exists
+- `Borger: Inspect Remote Project` exists
+- `Borger: Show Remote History` exists
+- `.borger/remote-hosts.local.json` is supported
+- `.borger/remote-hosts.local.json` is ignored by git
+- Remote host config supports id, label, host, port, username, auth mode, default cwd, allowed cwd list, and enabled flag
+- Private key contents are never stored, printed, or read into model context
+- SSH commands require `canUseSSH`
+- Host must be enabled in the local allowlist
+- Remote cwd must be inside `allowedRemoteCwds`
+- Remote commands check `ssh_command`
+- Local SSH transport checks `run_terminal`
+- Remote command policy blocks dangerous commands
+- Remote command policy blocks secret, token, credential, and private-key reads
+- Risky remote commands require confirmation
+- Remote command output captures stdout, stderr, exit code, duration, and status
+- Remote history exists for the current VS Code session
+- Remote actions are logged to `.borger/action-log.jsonl`
+- `Borger: Inspect Remote Project` uses safe read-only commands only
+- Remote Ops sidebar section shows host config, cwd, command input, output, inspection, and history
+- Deployment automation is not implemented
+- Remote file editing is not implemented
+- Host scanning, brute forcing, credential harvesting, and offensive security behavior are not implemented
+- Existing Plan Mode still works
+- Existing proposed changes still work
+- Existing safe edit application still works
+- Existing terminal command execution still works
+- Existing Fix Mode still works
+- Existing Auto Mode still works
+- Existing Git workflow still works
 - Provider routing remains active
 - Budget checks remain active
 - Permission checks remain active

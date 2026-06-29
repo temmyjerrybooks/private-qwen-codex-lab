@@ -21,6 +21,7 @@ export interface AuthorizationContext {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  remoteHostAllowlisted?: boolean;
   cwd?: string;
 }
 
@@ -33,6 +34,7 @@ export interface AuthorizationDecision {
   command?: string;
   filePath?: string;
   sshHost?: string;
+  remoteHostAllowlisted?: boolean;
   cwd?: string;
 }
 
@@ -65,6 +67,7 @@ export function evaluateAuthorization(
     command: context.command,
     filePath: context.filePath,
     sshHost: context.sshHost,
+    remoteHostAllowlisted: context.remoteHostAllowlisted,
     cwd: context.cwd
   };
 
@@ -157,6 +160,7 @@ function evaluateTerminalAuthorization(state: PermissionState, context: Authoriz
     command: context.command,
     filePath: context.filePath,
     sshHost: context.sshHost,
+    remoteHostAllowlisted: context.remoteHostAllowlisted,
     cwd: context.cwd
   };
   const command = context.command ?? "";
@@ -209,7 +213,7 @@ function evaluateTerminalAuthorization(state: PermissionState, context: Authoriz
 }
 
 function evaluateSshAuthorization(state: PermissionState, context: AuthorizationContext): AuthorizationDecision {
-  const allowedHost = context.sshHost ? state.allowedSshHosts.includes(context.sshHost) : false;
+  const allowedHost = Boolean(context.remoteHostAllowlisted || (context.sshHost && state.allowedSshHosts.includes(context.sshHost)));
   const allowed = state.capabilities.canUseSSH && allowedHost;
   return {
     actionType: "ssh_command",
@@ -217,10 +221,11 @@ function evaluateSshAuthorization(state: PermissionState, context: Authorization
     command: context.command,
     filePath: context.filePath,
     sshHost: context.sshHost,
+    remoteHostAllowlisted: context.remoteHostAllowlisted,
     allowed,
     requiresConfirmation: state.capabilities.requireConfirmationForSSH,
     reason: allowed
-      ? "SSH command is allowed for configured host with confirmation policy."
-      : "SSH is blocked or host is not in allowedSshHosts."
+      ? "SSH command is allowed for an allowlisted host with confirmation policy."
+      : "SSH is blocked or host is not allowlisted."
   };
 }

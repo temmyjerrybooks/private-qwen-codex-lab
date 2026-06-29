@@ -181,11 +181,37 @@
 - Log Git workflow lifecycle events
 - Preserve permission checks and command policy for every Git command
 - Block force push, hard reset, rebase, branch deletion, git clean, and secret/local-state staging
-- Keep SSH, remote ops, deploy automation, and Auto Mode commits out of scope
+- Keep deploy automation and Auto Mode commits out of scope
 - Document Git/GitHub workflow behavior and troubleshooting
+
+## Phase 12 - SSH and Remote Ops
+
+- Add `.borger/remote-hosts.local.json` support
+- Ignore `.borger/remote-hosts.local.json` in git
+- Add typed remote host, command result, policy, and inspection models
+- Add remote host config loader and disabled example template
+- Add allowlisted enabled host selection
+- Validate remote cwd against `allowedRemoteCwds`
+- Add safe remote command policy
+- Block destructive commands and secret/credential reads
+- Require confirmation for risky remote commands
+- Run remote commands through local `ssh` with captured output
+- Check `ssh_command` and `run_terminal` authorization before remote execution
+- Add current-session remote command history
+- Add SSH connection test command
+- Add remote project inspection with safe read-only commands
+- Add Remote Ops sidebar section
+- Add `Borger: Show Remote Hosts`
+- Add `Borger: Test SSH Connection`
+- Add `Borger: Run Remote Command`
+- Add `Borger: Inspect Remote Project`
+- Add `Borger: Show Remote History`
+- Log SSH and remote command lifecycle events
+- Preserve provider routing, budget checks, LiteLLM support, workspace context, permission checks, Auto Mode, and Git workflow
+- Keep deployment automation, remote file editing, host scanning, brute forcing, and offensive security behavior out of scope
+- Document Remote Ops setup, usage, and troubleshooting
 
 ## Later Phases
 
-- Phase 12: SSH and remote ops
 - Phase 12B: Memory and project notes
 - Phase 13: Polish and packaging
