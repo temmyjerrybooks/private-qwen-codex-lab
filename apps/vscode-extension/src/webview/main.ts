@@ -8,6 +8,13 @@ const statusEl = document.getElementById("status");
 const workspaceEl = document.getElementById("workspace");
 const contextStatusEl = document.getElementById("contextStatus");
 const planOutputEl = document.getElementById("planOutput");
+const fixStatusEl = document.getElementById("fixStatus");
+const fixOutputEl = document.getElementById("fixOutput");
+const fixRefreshButton = document.getElementById("fixRefreshButton");
+const fixDiagnosticsButton = document.getElementById("fixDiagnosticsButton");
+const fixLastCommandButton = document.getElementById("fixLastCommandButton");
+const fixCurrentFileButton = document.getElementById("fixCurrentFileButton");
+const explainLastErrorButton = document.getElementById("explainLastErrorButton");
 const taskInputEl = document.getElementById("taskInput") as HTMLTextAreaElement | null;
 const inspectButton = document.getElementById("inspectButton");
 const planButton = document.getElementById("planButton");
@@ -40,6 +47,26 @@ planButton?.addEventListener("click", () => {
 
 generateButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "generateProposedChanges", task: taskInputEl?.value ?? "" });
+});
+
+fixRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "refreshFixStatus" });
+});
+
+fixDiagnosticsButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "fixDiagnostics", task: taskInputEl?.value ?? "" });
+});
+
+fixLastCommandButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "fixLastFailedCommand", task: taskInputEl?.value ?? "" });
+});
+
+fixCurrentFileButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "fixCurrentFile", task: taskInputEl?.value ?? "" });
+});
+
+explainLastErrorButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "explainLastError", task: taskInputEl?.value ?? "" });
 });
 
 providerRefreshButton?.addEventListener("click", () => {
@@ -161,6 +188,15 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     pendingChangesOutputEl.innerHTML = renderPendingChanges(message.changeSet);
   }
 
+  if (message.type === "fixStatus" && fixStatusEl) {
+    fixStatusEl.innerHTML = renderFixStatus(message.fixStatus, message.error);
+  }
+
+  if (message.type === "fixResult" && fixOutputEl) {
+    fixOutputEl.classList.toggle("empty", !message.result);
+    fixOutputEl.innerHTML = renderFixResult(message.result);
+  }
+
   if (message.type === "commandHistory" && commandOutputEl) {
     commandOutputEl.classList.toggle("empty", !message.history || message.history.length === 0);
     commandOutputEl.innerHTML = renderCommandHistory(message.history ?? []);
@@ -168,7 +204,15 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
 });
 
 interface WebviewResponse {
-  type: "state" | "plan" | "providerStatus" | "permissionStatus" | "pendingChanges" | "commandHistory";
+  type:
+    | "state"
+    | "plan"
+    | "providerStatus"
+    | "permissionStatus"
+    | "pendingChanges"
+    | "fixStatus"
+    | "fixResult"
+    | "commandHistory";
   status?: string;
   body?: unknown;
   plan?: PlanTaskResultMessage | string;
@@ -176,6 +220,8 @@ interface WebviewResponse {
   state?: PermissionState;
   error?: string;
   changeSet?: PendingChangeSetMessage;
+  result?: FixModeResultMessage;
+  fixStatus?: FixModeStatusMessage;
   history?: TerminalCommandResultMessage[];
 }
 
@@ -273,6 +319,7 @@ interface PermissionState {
 
 interface PendingChangeSetMessage {
   id: string;
+  source?: "proposed_changes" | "fix_mode";
   task: string;
   summary: string;
   generatedAt: string;
@@ -304,6 +351,45 @@ interface PendingFileChangeMessage {
 }
 
 type PendingChangeStatusMessage = "pending" | "approved" | "rejected" | "applied" | "failed" | "invalid";
+
+interface DiagnosticContextItemMessage {
+  path: string;
+  severity: "error" | "warning" | "information" | "hint";
+  message: string;
+  source?: string;
+  range: {
+    startLine: number;
+    startCharacter: number;
+    endLine: number;
+    endCharacter: number;
+  };
+}
+
+interface DiagnosticsSummaryMessage {
+  total: number;
+  errorCount: number;
+  warningCount: number;
+  informationCount: number;
+  hintCount: number;
+  items: DiagnosticContextItemMessage[];
+  truncated: boolean;
+}
+
+interface FixModeStatusMessage {
+  diagnostics: DiagnosticsSummaryMessage;
+  latestFailedCommand?: TerminalCommandResultMessage;
+}
+
+interface FixModeResultMessage {
+  source: "diagnostics" | "last_failed_command" | "current_file" | "explain_last_error";
+  title: string;
+  summary: string;
+  generatedAt: string;
+  diagnostics: DiagnosticsSummaryMessage;
+  failedCommand?: TerminalCommandResultMessage;
+  changeSet?: PendingChangeSetMessage;
+  explanation?: string;
+}
 
 interface TerminalCommandResultMessage {
   id: string;
@@ -521,7 +607,7 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
   return `
     <section class="changes-summary">
       <h3>${escapeHtml(changeSet.summary)}</h3>
-      <p>${escapeHtml(changeSet.task)} via ${escapeHtml(changeSet.provider.label)}</p>
+      <p>${escapeHtml(changeSet.task)} via ${escapeHtml(changeSet.provider.label)}${changeSet.source ? ` - ${escapeHtml(changeSet.source)}` : ""}</p>
       <p>${counts.pending} pending, ${counts.approved} approved, ${counts.applied} applied, ${counts.failed} failed, ${counts.rejected} rejected, ${counts.invalid} invalid</p>
     </section>
     ${files}
@@ -533,6 +619,91 @@ function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): s
       <h4>Risks</h4>
       ${risks}
     </section>`;
+}
+
+function renderFixStatus(status: FixModeStatusMessage | undefined, error: string | undefined): string {
+  if (error) {
+    return `<div><dt>Status</dt><dd>${escapeHtml(error)}</dd></div>`;
+  }
+  if (!status) {
+    return "<div><dt>Status</dt><dd>No Fix Mode status loaded</dd></div>";
+  }
+
+  const diagnostics = status.diagnostics;
+  const failedCommand = status.latestFailedCommand
+    ? `${status.latestFailedCommand.command} (${status.latestFailedCommand.reason})`
+    : "none";
+  const rows = [
+    ["Diagnostics", `${diagnostics.errorCount} errors, ${diagnostics.warningCount} warnings, ${diagnostics.total} total`],
+    ["Latest Failed", failedCommand],
+    ["Behavior", "Proposes pending changes only"]
+  ];
+
+  return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
+}
+
+function renderFixResult(result: FixModeResultMessage | undefined): string {
+  if (!result) {
+    return '<div class="empty">No fix proposal generated.</div>';
+  }
+
+  const diagnostics = result.diagnostics.items.length > 0
+    ? `<ul class="plan-list">${result.diagnostics.items
+        .slice(0, 8)
+        .map(
+          (item) =>
+            `<li><strong>${escapeHtml(item.path)}</strong><span>${escapeHtml(
+              `${item.severity} ${item.range.startLine}:${item.range.startCharacter} - ${item.message}`
+            )}</span></li>`
+        )
+        .join("")}</ul>`
+    : '<p class="muted">No diagnostics included.</p>';
+  const command = result.failedCommand
+    ? `<p><code>${escapeHtml(result.failedCommand.command)}</code></p><p class="muted">${escapeHtml(result.failedCommand.reason)}</p>`
+    : '<p class="muted">No failed command attached.</p>';
+  const pending = result.changeSet
+    ? `<p>${result.changeSet.changes.length} pending file change${result.changeSet.changes.length === 1 ? "" : "s"} generated for review.</p>`
+    : '<p class="muted">No pending file changes were generated.</p>';
+  const commands = result.changeSet && result.changeSet.commandsToRunLater.length > 0
+    ? `<ul class="plan-list">${result.changeSet.commandsToRunLater
+        .map((commandToRun) => `<li><code>${escapeHtml(commandToRun.command)}</code><span>${escapeHtml(commandToRun.reason)}</span></li>`)
+        .join("")}</ul>`
+    : '<p class="muted">No verification commands suggested.</p>';
+  const explanation = result.explanation
+    ? `<section class="plan-section"><h4>Explanation</h4><div class="plan-copy">${renderPlanMarkdownFragment(result.explanation)}</div></section>`
+    : "";
+
+  return `
+    <article class="fix-card">
+      <header class="plan-header">
+        <div>
+          <h3>${escapeHtml(result.title)}</h3>
+          <p>${escapeHtml(result.source)} - ${escapeHtml(result.generatedAt)}</p>
+        </div>
+        <span class="change-status ${result.changeSet ? "pending" : "succeeded"}">${result.changeSet ? "review" : "explain"}</span>
+      </header>
+      <section class="plan-section">
+        <h4>Summary</h4>
+        <p>${escapeHtml(result.summary)}</p>
+      </section>
+      ${explanation}
+      <section class="plan-section">
+        <h4>Diagnostics Used</h4>
+        ${diagnostics}
+      </section>
+      <section class="plan-section">
+        <h4>Failed Command</h4>
+        ${command}
+      </section>
+      <section class="plan-section">
+        <h4>Pending Fix Diffs</h4>
+        ${pending}
+      </section>
+      <section class="plan-section">
+        <h4>Suggested Verification Commands</h4>
+        ${commands}
+      </section>
+    </article>`;
 }
 
 function renderCommandHistory(history: TerminalCommandResultMessage[]): string {

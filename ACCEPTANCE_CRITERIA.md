@@ -195,4 +195,38 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 9
+
+- `Borger: Fix Diagnostics` exists
+- `Borger: Fix Last Failed Command` exists
+- `Borger: Fix Current File` exists
+- `Borger: Explain Last Error` exists
+- The Borger sidebar has a Fix Mode section
+- Fix Mode reads VS Code diagnostics and prioritizes errors before warnings
+- Fix Mode can use the latest captured failed terminal command output
+- Fix Mode can focus on the active editor file and selected text
+- Fix Mode asks the model for strict JSON repair proposals
+- Repair proposals are parsed through the existing edit proposal parser
+- Repair proposals create pending diffs for review
+- Fix Mode does not apply edits automatically
+- Fix Mode does not run commands automatically
+- Suggested verification commands remain manual
+- `Explain Last Error` is explanation-only and does not create pending changes
+- `read_workspace` authorization is checked before context collection
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
+- Workspace context remains active
+- Existing Plan Mode still works
+- Existing proposed change generation still works
+- Existing approved file application still works
+- Existing controlled terminal execution still works
+- Auto Mode is not implemented
+- GitHub push workflow is not implemented
+- SSH and remote ops are not implemented
+- Deployment automation is not implemented
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

@@ -314,6 +314,27 @@ code {
   padding: 8px;
 }
 
+.fix-output {
+  min-height: 120px;
+  max-height: 460px;
+  overflow: auto;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-input-border);
+  padding: 8px;
+}
+
+.fix-output.empty {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.fix-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .command-output {
   min-height: 120px;
   max-height: 520px;

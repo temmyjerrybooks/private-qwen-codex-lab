@@ -26,6 +26,18 @@ export function getCommandHistory(): TerminalCommandResult[] {
   return [...commandHistory];
 }
 
+export function getFailedCommandHistory(): TerminalCommandResult[] {
+  return commandHistory.filter((entry) => entry.status === "failed");
+}
+
+export function getLatestFailedCommand(): TerminalCommandResult | undefined {
+  return getFailedCommandHistory()[0];
+}
+
+export function getCommandHistoryEntry(id: string): TerminalCommandResult | undefined {
+  return commandHistory.find((entry) => entry.id === id);
+}
+
 export function clearCommandHistory(): void {
   commandHistory = [];
 }

@@ -4,7 +4,11 @@ import { registerApplyCurrentPendingChangeCommand } from "./commands/applyCurren
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
 import { registerClearCommandHistoryCommand } from "./commands/clearCommandHistory";
 import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
+import { registerExplainLastErrorCommand } from "./commands/explainLastError";
 import { registerExplainSelectionCommand } from "./commands/explainSelection";
+import { registerFixCurrentFileCommand } from "./commands/fixCurrentFile";
+import { registerFixDiagnosticsCommand } from "./commands/fixDiagnostics";
+import { registerFixLastCommandCommand } from "./commands/fixLastCommand";
 import { registerFixSelectionCommand } from "./commands/fixSelection";
 import { registerGenerateTestsCommand } from "./commands/generateTests";
 import { registerGenerateProposedChangesCommand } from "./commands/generateProposedChanges";
@@ -55,6 +59,10 @@ export function activate(context: vscode.ExtensionContext): void {
     registerRefactorSelectionCommand(),
     registerRunAgentTaskCommand(output, agentPanel),
     registerGenerateProposedChangesCommand(output, agentPanel),
+    registerFixDiagnosticsCommand(output, agentPanel),
+    registerFixLastCommandCommand(output, agentPanel),
+    registerFixCurrentFileCommand(output, agentPanel),
+    registerExplainLastErrorCommand(output, agentPanel),
     registerShowPendingChangesCommand(output, agentPanel),
     registerClearPendingChangesCommand(agentPanel),
     registerApplyApprovedChangesCommand(output, agentPanel),

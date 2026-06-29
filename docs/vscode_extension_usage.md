@@ -182,7 +182,40 @@ Examples blocked by default:
 - commands attempting to delete `.git`
 - commands attempting to escape the workspace root
 
-Phase 9 will add Fix Mode that can use captured command output to propose repairs. The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
+## Fix Mode
+
+Phase 9 adds repair workflows that use existing context instead of guessing from a blank prompt.
+
+Run:
+
+```text
+Borger: Fix Diagnostics
+Borger: Fix Last Failed Command
+Borger: Fix Current File
+Borger: Explain Last Error
+```
+
+The sidebar also includes a Fix Mode section with the same actions and a status summary for diagnostics plus the latest failed Borger command.
+
+Fix Diagnostics reads VS Code diagnostics, prioritizes errors before warnings, asks the active provider for a strict JSON repair proposal, and creates pending diffs for review.
+
+Fix Last Failed Command uses the latest failed captured terminal result, including stdout, stderr, exit code, duration, and reason. If multiple failed commands exist, the command palette flow lets you choose one.
+
+Fix Current File focuses on the active editor file, selected text when present, and diagnostics for that file.
+
+Explain Last Error sends the same context to the model but returns explanation-only Markdown. It does not create pending changes.
+
+Fix Mode remains review-first:
+
+- it checks `read_workspace` before collecting context
+- it uses ProviderRouter and budget checks before model calls
+- it does not write files directly
+- it does not run terminal commands automatically
+- all generated file changes appear as pending diffs
+- applying fixes still requires Phase 7 approval and safe apply
+- suggested verification commands must be run manually through Phase 8 terminal execution
+
+The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
 
 ## Commands
 
@@ -191,6 +224,10 @@ Phase 9 will add Fix Mode that can use captured command output to propose repair
 - `Borger: Test Model Connection`
 - `Borger: Plan Task`
 - `Borger: Generate Proposed Changes`
+- `Borger: Fix Diagnostics`
+- `Borger: Fix Last Failed Command`
+- `Borger: Fix Current File`
+- `Borger: Explain Last Error`
 - `Borger: Show Pending Changes`
 - `Borger: Clear Pending Changes`
 - `Borger: Apply Approved Changes`

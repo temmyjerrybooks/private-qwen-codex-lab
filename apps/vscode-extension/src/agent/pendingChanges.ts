@@ -3,6 +3,7 @@ import { ParsedEditCommand } from "./patchParser";
 
 export type PendingChangeStatus = "pending" | "approved" | "rejected" | "applied" | "failed" | "invalid";
 export type PendingChangeAction = "create" | "modify" | "delete";
+export type PendingChangeSetSource = "proposed_changes" | "fix_mode";
 
 export interface PendingFileChange {
   id: string;
@@ -23,6 +24,7 @@ export interface PendingFileChange {
 
 export interface PendingChangeSet {
   id: string;
+  source?: PendingChangeSetSource;
   task: string;
   summary: string;
   generatedAt: string;

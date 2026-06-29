@@ -130,9 +130,24 @@
 - Keep Fix Mode, Auto Mode, GitHub workflow, SSH, and deploy automation out of scope
 - Document terminal behavior and troubleshooting
 
+## Phase 9 - Fix Mode
+
+- Add Fix Mode prompt builders for diagnostics, current file, failed commands, and explanation-only analysis
+- Add repair generation through ProviderRouter and LiteLLM
+- Use VS Code diagnostics grouped and prioritized by severity
+- Use captured failed command output as model context
+- Focus current-file fixes on the active editor and selected text
+- Parse repair proposals through the existing strict JSON edit parser
+- Create pending fix diffs through the existing pending changes flow
+- Keep all file writes behind Phase 7 approval and safe apply
+- Keep verification commands manual through Phase 8 terminal execution
+- Add sidebar Fix Mode status, actions, and result rendering
+- Add commands for fixing diagnostics, last failed command, current file, and explaining last error
+- Preserve permission checks, provider routing, budget checks, LiteLLM support, workspace context, and action logging
+- Document Fix Mode behavior and troubleshooting
+
 ## Later Phases
 
-- Phase 9: Fix mode
 - Phase 10: Auto mode
 - Phase 11: GitHub workflow
 - Phase 12: SSH and remote ops

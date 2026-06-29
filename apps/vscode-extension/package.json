@@ -17,6 +17,10 @@
     "onCommand:borger.testModelConnection",
     "onCommand:borger.planTask",
     "onCommand:borger.generateProposedChanges",
+    "onCommand:borger.fixDiagnostics",
+    "onCommand:borger.fixLastFailedCommand",
+    "onCommand:borger.fixCurrentFile",
+    "onCommand:borger.explainLastError",
     "onCommand:borger.showPendingChanges",
     "onCommand:borger.clearPendingChanges",
     "onCommand:borger.applyApprovedChanges",
@@ -303,6 +307,22 @@
       {
         "command": "borger.generateProposedChanges",
         "title": "Borger: Generate Proposed Changes"
+      },
+      {
+        "command": "borger.fixDiagnostics",
+        "title": "Borger: Fix Diagnostics"
+      },
+      {
+        "command": "borger.fixLastFailedCommand",
+        "title": "Borger: Fix Last Failed Command"
+      },
+      {
+        "command": "borger.fixCurrentFile",
+        "title": "Borger: Fix Current File"
+      },
+      {
+        "command": "borger.explainLastError",
+        "title": "Borger: Explain Last Error"
       },
       {
         "command": "borger.showPendingChanges",

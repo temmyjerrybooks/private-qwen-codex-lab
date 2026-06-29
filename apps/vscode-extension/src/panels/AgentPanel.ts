@@ -3,7 +3,12 @@ import { buildWorkspaceContext } from "../agent/contextBuilder";
 import {
   applyApprovedPendingChanges,
   applyPendingChangeById,
+  explainLastError,
+  generateCurrentFileFix,
+  generateDiagnosticsFix,
+  generateLastFailedCommandFix,
   generateProposedChanges,
+  getFixModeStatus,
   runControlledTerminalCommand,
   revertLastAppliedChange
 } from "../agent/executor";
@@ -25,6 +30,7 @@ import { clearCommandHistory, getCommandHistory } from "../terminal/commandHisto
 import { TerminalExecutionMode } from "../terminal/commandTypes";
 import { formatCommandResultForOutput, formatCommandHistoryForOutput } from "../ui/commandOutputFormatter";
 import { formatPendingChangesForOutput } from "../ui/diffProvider";
+import { formatFixModeResultForOutput } from "../ui/fixResultFormatter";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -57,6 +63,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     void this.postPermissionStatus();
     this.postPendingChanges(getPendingChanges());
     this.postCommandHistory();
+    void this.postFixStatus();
   }
 
   async focus(): Promise<void> {
@@ -84,6 +91,22 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.view?.webview.postMessage({ type: "commandHistory", history: getCommandHistory() });
   }
 
+  async postFixStatus(): Promise<void> {
+    try {
+      const status = await getFixModeStatus();
+      this.view?.webview.postMessage({ type: "fixStatus", fixStatus: status });
+    } catch (error) {
+      this.view?.webview.postMessage({
+        type: "fixStatus",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  private postFixResult(result: Awaited<ReturnType<typeof generateDiagnosticsFix>>): void {
+    this.view?.webview.postMessage({ type: "fixResult", result });
+  }
+
   async generateProposedChanges(task: string): Promise<void> {
     this.postState("Generating proposed changes...");
     const changeSet = await generateProposedChanges(task, this.context);
@@ -93,6 +116,42 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postPendingChanges(changeSet);
     await this.postProviderStatus();
     await this.postPermissionStatus();
+  }
+
+  async fixDiagnostics(userTask?: string): Promise<void> {
+    this.postState("Generating diagnostic fix proposal...");
+    const result = await generateDiagnosticsFix(this.context, userTask);
+    this.handleFixModeResult(result);
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+    await this.postFixStatus();
+  }
+
+  async fixLastFailedCommand(commandId?: string, userTask?: string): Promise<void> {
+    this.postState("Generating failed-command fix proposal...");
+    const result = await generateLastFailedCommandFix(this.context, commandId, userTask);
+    this.handleFixModeResult(result);
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+    await this.postFixStatus();
+  }
+
+  async fixCurrentFile(userTask?: string): Promise<void> {
+    this.postState("Generating current-file fix proposal...");
+    const result = await generateCurrentFileFix(this.context, userTask);
+    this.handleFixModeResult(result);
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+    await this.postFixStatus();
+  }
+
+  async explainLastError(userTask?: string): Promise<void> {
+    this.postState("Explaining last error...");
+    const result = await explainLastError(this.context, userTask);
+    this.handleFixModeResult(result);
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+    await this.postFixStatus();
   }
 
   async applyApprovedChanges(): Promise<void> {
@@ -231,6 +290,55 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       return;
     }
 
+    if (message.type === "fixDiagnostics") {
+      try {
+        await this.fixDiagnostics(message.task);
+      } catch (error) {
+        this.postState("Fix diagnostics failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "fixLastFailedCommand") {
+      try {
+        await this.fixLastFailedCommand(message.commandId, message.task);
+      } catch (error) {
+        this.postState("Fix last failed command failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "fixCurrentFile") {
+      try {
+        await this.fixCurrentFile(message.task);
+      } catch (error) {
+        this.postState("Fix current file failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "explainLastError") {
+      try {
+        await this.explainLastError(message.task);
+      } catch (error) {
+        this.postState("Explain last error failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      return;
+    }
+
+    if (message.type === "refreshFixStatus") {
+      await this.postFixStatus();
+      return;
+    }
+
     if (message.type === "runTerminalCommand" && typeof message.command === "string") {
       try {
         await this.runTerminalCommand(message.command, normalizeTerminalMode(message.mode));
@@ -346,6 +454,17 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postPendingChanges(markPendingChange(changeId, "approved"));
   }
 
+  private handleFixModeResult(result: Awaited<ReturnType<typeof generateDiagnosticsFix>>): void {
+    this.output.show(true);
+    this.output.appendLine(formatFixModeResultForOutput(result));
+    if (result.changeSet) {
+      setPendingChanges(result.changeSet);
+      this.postPendingChanges(result.changeSet);
+    }
+    this.postFixResult(result);
+    this.postState(result.changeSet ? "Fix proposal generated for review" : "Fix explanation generated");
+  }
+
   private async approveAllPendingChanges(): Promise<void> {
     const changeSet = getPendingChanges();
     if (!changeSet) {
@@ -442,6 +561,23 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     <section class="output">
       <div class="section-title">
+        <h2>Fix Mode</h2>
+        <button id="fixRefreshButton">Refresh</button>
+      </div>
+      <dl id="fixStatus" class="provider-status">
+        <div><dt>Diagnostics</dt><dd>Checking...</dd></div>
+      </dl>
+      <div class="actions">
+        <button id="fixDiagnosticsButton">Fix Diagnostics</button>
+        <button id="fixLastCommandButton">Fix Last Failed Command</button>
+        <button id="fixCurrentFileButton">Fix Current File</button>
+        <button id="explainLastErrorButton">Explain Last Error</button>
+      </div>
+      <div id="fixOutput" class="fix-output empty">No fix proposal generated.</div>
+    </section>
+
+    <section class="output">
+      <div class="section-title">
         <h2>Pending Changes</h2>
         <div class="change-actions">
           <button id="approveAllButton">Approve All</button>
@@ -481,6 +617,7 @@ interface WebviewMessage {
   type: string;
   task?: string;
   changeId?: string;
+  commandId?: string;
   command?: string;
   mode?: string;
 }

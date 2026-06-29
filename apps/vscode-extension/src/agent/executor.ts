@@ -19,6 +19,15 @@ import {
 } from "./pendingChanges";
 import { parseEditProposalFromModel } from "./patchParser";
 import { buildEditProposalPrompt, systemPrompt } from "./prompts";
+export {
+  explainLastError,
+  generateCurrentFileFix,
+  generateDiagnosticsFix,
+  generateLastFailedCommandFix,
+  getFixModeStatus,
+  type FixModeResult,
+  type FixModeStatus
+} from "./fixMode";
 
 export async function generateProposedChanges(
   task: string,
@@ -68,6 +77,7 @@ export async function generateProposedChanges(
     );
 
     const pending = createPendingChangeSet({
+      source: "proposed_changes",
       task: trimmedTask,
       summary: parsed.summary,
       provider: selectedProvider,

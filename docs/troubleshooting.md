@@ -84,6 +84,17 @@ http://localhost:4000/v1
 - If command history is empty after reloading VS Code, that is expected. Phase 8 command history is in-memory for the current session.
 - Command authorization and lifecycle events are logged to `.borger/action-log.jsonl`.
 
+## Fix Mode Issues
+
+- If Fix Diagnostics reports no diagnostics, wait for the relevant VS Code language extension to finish or run a build/typecheck command manually.
+- If Fix Last Failed Command reports no failed command, run the failing command through Borger captured terminal execution first.
+- If Fix Current File cannot run, open a file inside the workspace and make sure it is not skipped as too large, binary, outside the workspace, or secret-like.
+- If Fix Mode is blocked, run `Borger: Show Permissions` and confirm `canReadWorkspace` is enabled.
+- If no provider is available, run `Borger: Show Provider Status` and check paused providers, budget thresholds, or missing API keys.
+- If a fix proposal creates invalid pending changes, inspect the file card reason. Secret-like files, path escapes, missing modify targets, and duplicate create targets are blocked.
+- If suggested verification commands appear, run them manually. Fix Mode does not rerun commands automatically.
+- If Explain Last Error creates no pending changes, that is expected. It is explanation-only.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

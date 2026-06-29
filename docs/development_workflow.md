@@ -70,4 +70,15 @@
 4. Review the confirmation prompt when the command is risky or the active profile requires confirmation.
 5. Check stdout, stderr, exit code, duration, and status in the sidebar or output channel.
 6. Use `Borger: Show Command History` to review commands from the current VS Code session.
-7. Use command output as context for your next request. Phase 9 will automate Fix Mode around these results.
+7. Use command output as context for Fix Mode or your next request.
+
+## Fix Mode Workflow
+
+1. Run a language server, build, test, or typecheck command manually so diagnostics or command output exist.
+2. Use `Borger: Fix Diagnostics` when VS Code diagnostics are the clearest signal.
+3. Use `Borger: Fix Last Failed Command` after a captured Borger terminal command fails.
+4. Use `Borger: Fix Current File` when the active file or selected text is the repair target.
+5. Use `Borger: Explain Last Error` when you want root-cause analysis without pending changes.
+6. Review generated pending diffs in the sidebar.
+7. Approve and apply fixes through the existing safe apply workflow only.
+8. Run suggested verification commands manually through Phase 8 terminal execution.

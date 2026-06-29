@@ -1,4 +1,5 @@
 import { WorkspaceContext } from "./contextBuilder";
+export { buildExplainLastErrorPrompt, buildFixProposalPrompt } from "./fixPrompts";
 
 export const systemPrompt = `You are Borger, a private VS Code coding agent.
 

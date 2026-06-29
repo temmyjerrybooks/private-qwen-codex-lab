@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Later phases add fix mode, auto mode, git workflow, memory, and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Later phases add auto mode, git workflow, memory, and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes.
 
 ## Quick Start
 
@@ -149,7 +149,21 @@ Riskier commands such as `npm install`, `pip install`, `docker compose up`, `doc
 
 Suggested commands from proposed changes are displayed as manual run buttons. Applying file changes never automatically runs commands in Phase 8.
 
-Phase 9 is expected to add Fix Mode that can use captured command output to propose fixes. The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
+## Fix Mode
+
+Phase 9 adds manually triggered repair workflows:
+
+- `Borger: Fix Diagnostics`
+- `Borger: Fix Last Failed Command`
+- `Borger: Fix Current File`
+- `Borger: Explain Last Error`
+- the Fix Mode section in the Borger sidebar
+
+Fix Mode collects VS Code diagnostics, active-file context, selected text, workspace context, and the latest captured failed Borger command when relevant. It asks the active provider for strict JSON repair proposals, parses them through the existing edit proposal parser, and creates pending diffs for review.
+
+Fix Mode does not apply edits automatically. All file writes still go through Phase 7 approval and safe apply. Suggested verification commands are shown for manual execution through Phase 8 terminal controls. `Explain Last Error` is explanation-only and never creates pending changes.
+
+The dedicated GitHub push workflow, SSH, deployment automation, and Auto Mode come later.
 
 ## Permission System
 
@@ -187,4 +201,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 6: Diff and patch preview - implemented
 - Phase 7: Real edit mode and safe file application - implemented
 - Phase 8: Controlled terminal execution - implemented
-- Phase 9+: Not started
+- Phase 9: Fix mode - implemented
+- Phase 10+: Not started
