@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
+import { registerAddProjectNoteCommand } from "./commands/addProjectNote";
 import { registerApplyApprovedChangesCommand } from "./commands/applyApprovedChanges";
 import { registerApplyCurrentPendingChangeCommand } from "./commands/applyCurrentPendingChange";
 import { registerAskAboutFileCommand } from "./commands/askAboutFile";
 import { registerClearCommandHistoryCommand } from "./commands/clearCommandHistory";
 import { registerClearPendingChangesCommand } from "./commands/clearPendingChanges";
+import { registerClearProjectMemoryCommand } from "./commands/clearProjectMemory";
 import { registerCreateGitBranchCommand } from "./commands/createGitBranch";
 import { registerCreateGitCommitCommand } from "./commands/createGitCommit";
 import { registerExplainLastErrorCommand } from "./commands/explainLastError";
@@ -36,6 +38,7 @@ import { registerShowAutoModeStatusCommand } from "./commands/showAutoModeStatus
 import { registerShowCommandHistoryCommand } from "./commands/showCommandHistory";
 import { registerShowPendingChangesCommand } from "./commands/showPendingChanges";
 import { registerShowPermissionsCommand } from "./commands/showPermissions";
+import { registerShowProjectMemoryCommand } from "./commands/showProjectMemory";
 import { registerShowProviderStatusCommand } from "./commands/showProviderStatus";
 import { registerShowRemoteHistoryCommand } from "./commands/showRemoteHistory";
 import { registerShowRemoteHostsCommand } from "./commands/showRemoteHosts";
@@ -45,6 +48,7 @@ import { registerSwitchProviderCommand } from "./commands/switchProvider";
 import { registerTestSshConnectionCommand } from "./commands/testSshConnection";
 import { registerTestModelConnectionCommand } from "./commands/testModelConnection";
 import { registerUpdatePermissionProfileCommand } from "./commands/updatePermissionProfile";
+import { registerUpdateProjectSummaryCommand } from "./commands/updateProjectSummary";
 import { AgentPanel } from "./panels/AgentPanel";
 import { SidebarTreeProvider } from "./panels/SidebarTreeProvider";
 import { createOutputChannel } from "./ui/outputChannel";
@@ -89,6 +93,10 @@ export function activate(context: vscode.ExtensionContext): void {
     registerRunRemoteCommandCommand(output, agentPanel),
     registerInspectRemoteProjectCommand(output, agentPanel),
     registerShowRemoteHistoryCommand(output, agentPanel),
+    registerShowProjectMemoryCommand(output, agentPanel),
+    registerAddProjectNoteCommand(output, agentPanel),
+    registerUpdateProjectSummaryCommand(output, agentPanel),
+    registerClearProjectMemoryCommand(output, agentPanel),
     registerFixDiagnosticsCommand(output, agentPanel),
     registerFixLastCommandCommand(output, agentPanel),
     registerFixCurrentFileCommand(output, agentPanel),

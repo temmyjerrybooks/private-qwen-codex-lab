@@ -35,9 +35,11 @@ Do not create files.
 Do not run terminal commands.
 Do not commit, push, deploy, use SSH, or perform any external action.
 Use the workspace context to be concrete about likely files, risks, assumptions, and verification steps.
+Use projectMemory from the workspace context when it is available, but treat it as local notes only.
 Avoid vague advice.
 Reference actual files from the workspace context where possible.
 Do not invent file contents that are not visible in the workspace context.
+Do not ask for, expose, or rely on secrets, tokens, private keys, .env contents, or credential material.
 Clearly label assumptions when the context is incomplete.
 
 User task:
@@ -117,6 +119,8 @@ Return proposed file changes only. Borger applies approved changes in a separate
 Do not claim to edit files or say changes have been applied.
 Do not run commands.
 Do not commit, push, deploy, use SSH, or perform external actions.
+Use safe projectMemory from the workspace context when it helps preserve local decisions, known limitations, or preferred commands.
+Do not ask for, expose, or rely on secrets, tokens, private keys, .env contents, or credential material.
 
 User task:
 ${task}

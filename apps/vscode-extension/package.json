@@ -32,6 +32,10 @@
     "onCommand:borger.runRemoteCommand",
     "onCommand:borger.inspectRemoteProject",
     "onCommand:borger.showRemoteHistory",
+    "onCommand:borger.showProjectMemory",
+    "onCommand:borger.addProjectNote",
+    "onCommand:borger.updateProjectSummary",
+    "onCommand:borger.clearProjectMemory",
     "onCommand:borger.fixDiagnostics",
     "onCommand:borger.fixLastFailedCommand",
     "onCommand:borger.fixCurrentFile",
@@ -428,6 +432,22 @@
       {
         "command": "borger.showRemoteHistory",
         "title": "Borger: Show Remote History"
+      },
+      {
+        "command": "borger.showProjectMemory",
+        "title": "Borger: Show Project Memory"
+      },
+      {
+        "command": "borger.addProjectNote",
+        "title": "Borger: Add Project Note"
+      },
+      {
+        "command": "borger.updateProjectSummary",
+        "title": "Borger: Update Project Summary"
+      },
+      {
+        "command": "borger.clearProjectMemory",
+        "title": "Borger: Clear Project Memory"
       },
       {
         "command": "borger.fixDiagnostics",

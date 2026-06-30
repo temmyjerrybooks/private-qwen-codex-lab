@@ -12,5 +12,7 @@ coverage/
 .borger/provider-state.json
 .borger/permissions.local.json
 .borger/remote-hosts.local.json
+.borger/project-memory.local.json
+.borger/project-notes.local.jsonl
 .borger/action-log.jsonl
 .borger/backups/

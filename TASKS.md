@@ -211,7 +211,28 @@
 - Keep deployment automation, remote file editing, host scanning, brute forcing, and offensive security behavior out of scope
 - Document Remote Ops setup, usage, and troubleshooting
 
+## Phase 12B - Project Memory and Local Notes
+
+- Add `.borger/project-memory.local.json` support
+- Add `.borger/project-notes.local.jsonl` support
+- Ignore both memory files in git
+- Add typed project memory and note models
+- Add memory policy for redacting or blocking secrets, credentials, private keys, and `.env` contents
+- Add project memory loader, writer, and clear helpers
+- Add append-only project notes support
+- Add project summary generation through ProviderRouter and budget checks
+- Add safe project memory context to workspace context
+- Feed safe memory into Plan Mode, Fix Mode, proposed changes, and Auto Mode through workspace context
+- Add Project Memory sidebar section
+- Add `Borger: Show Project Memory`
+- Add `Borger: Add Project Note`
+- Add `Borger: Update Project Summary`
+- Add `Borger: Clear Project Memory`
+- Log memory load, note add, summary update, clear, and blocked events
+- Preserve existing provider routing, budget checks, LiteLLM support, permission checks, Git workflow, and Remote Ops
+- Keep packaging, VSIX release, deployment automation, new SSH behavior, destructive Git behavior, and secret storage out of scope
+- Document Project Memory setup, usage, protection rules, and troubleshooting
+
 ## Later Phases
 
-- Phase 12B: Memory and project notes
 - Phase 13: Polish and packaging

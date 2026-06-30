@@ -347,4 +347,45 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
+## Phase 12B
+
+- `Borger: Show Project Memory` exists
+- `Borger: Add Project Note` exists
+- `Borger: Update Project Summary` exists
+- `Borger: Clear Project Memory` exists
+- `.borger/project-memory.local.json` is supported
+- `.borger/project-notes.local.jsonl` is supported
+- Both memory files are ignored by git
+- Memory policy blocks obvious private keys, credentials, tokens, and passwords
+- Memory policy redacts secret-like values and paths before prompt use
+- `.env.example` remains allowed as documentation
+- Project notes are append-only JSONL entries
+- Adding a project note does not require a model call
+- Updating project summary checks `read_workspace`
+- Updating project summary uses ProviderRouter and budget checks
+- Updating project summary sanitizes model output before saving
+- Clearing project memory requires confirmation
+- Clearing project memory only removes the two memory files
+- Plan Mode can include safe memory summary
+- Fix Mode can include safe memory summary
+- Auto Mode can include safe memory summary through workspace context
+- Inspect Workspace can show memory status
+- UI shows Project Memory section
+- Memory actions are logged to `.borger/action-log.jsonl`
+- Secrets, private keys, tokens, credentials, provider secrets, remote-host secrets, and sensitive runtime logs are not intentionally stored
+- Existing Plan Mode still works
+- Existing proposed changes still work
+- Existing safe edit application still works
+- Existing terminal execution still works
+- Existing Fix Mode still works
+- Existing Auto Mode still works
+- Existing Git workflow still works
+- Existing Remote Ops still works
+- Provider routing remains active
+- Budget checks remain active
+- Permission checks remain active
+- LiteLLM support remains active
+- `npm run compile` passes
+- `npm run check-types` passes
+
 Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.

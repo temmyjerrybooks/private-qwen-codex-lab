@@ -2,7 +2,7 @@
 
 Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Phase 12 adds controlled SSH and Remote Ops. Later phases add memory and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Phase 12 adds controlled SSH and Remote Ops. Phase 12B adds local project memory and notes. Later phases add polish and packaging.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ VS Code Extension
   -> SGLang
 ```
 
-Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop. Phase 11 adds reviewed branch, staging, commit, push, and pull-request preparation workflows. Phase 12 adds allowlisted SSH host config, safe remote commands, remote output capture, and remote project inspection.
+Phase 1 includes the VS Code extension shell, read-only workspace inspection, a LiteLLM client skeleton, and plan-mode prompting. Phase 2 adds the Modal-hosted SGLang endpoint. Phase 2.5 lets Borger route model calls across pre-authorized provider endpoints based on local budget state. Phase 3 provides the local LiteLLM config, Docker Compose runner, smoke test, and provider examples. Phase 4 builds structured workspace context before inspection and planning. Phase 5 adds relevant-file ranking, complexity estimation, structured plan prompts, and richer plan rendering. Phase 6 asks the model for strict JSON edit proposals, validates them, and shows pending diffs. Phase 7 applies approved create/modify changes only after authorization, safe path validation, binary/secret guards, and backup creation. Phase 8 runs authorized local terminal commands from the workspace root and captures output where practical. Phase 9 uses diagnostics and captured failed-command output to propose reviewed fixes. Phase 10 orchestrates plan, edit proposal, safe apply, verification, diagnostics, and Fix Mode inside a strict local loop. Phase 11 adds reviewed branch, staging, commit, push, and pull-request preparation workflows. Phase 12 adds allowlisted SSH host config, safe remote commands, remote output capture, and remote project inspection. Phase 12B adds ignored local memory files, project notes, and safe memory context for planning and repair workflows.
 
 ## Quick Start
 
@@ -292,7 +292,32 @@ Blocked examples include `rm -rf`, `sudo rm`, `mkfs`, shutdown/reboot commands, 
 
 Phase 12 does not add deployment automation, SSH auto mode, remote file editing, secret syncing, host scanning, brute forcing, or offensive security behavior.
 
-Next, Phase 13 is expected to focus on polish and packaging after the remaining memory/project-notes scope is handled.
+## Project Memory
+
+Phase 12B adds local workspace memory through:
+
+- `Borger: Show Project Memory`
+- `Borger: Add Project Note`
+- `Borger: Update Project Summary`
+- `Borger: Clear Project Memory`
+- the Project Memory section in the Borger sidebar
+
+Memory is stored only in ignored local files:
+
+```text
+.borger/project-memory.local.json
+.borger/project-notes.local.jsonl
+```
+
+Project memory stores a concise summary, architecture facts, important decisions, known limitations, and preferred commands. Project notes are append-only JSONL entries with type, title, body, tags, and timestamps.
+
+Never store secrets in memory: no `.env` contents, private keys, tokens, credentials, API keys, provider secrets, remote-host secrets, or sensitive runtime logs. The memory policy blocks obvious credential/private-key material and redacts secret-like values or paths before memory is used in prompts. `.env.example` remains allowed as documentation.
+
+`Update Project Summary` checks `read_workspace`, builds safe workspace context, includes existing safe memory and recent notes, routes the model call through ProviderRouter and budget checks, then saves the sanitized summary. Plan Mode, Fix Mode, proposed changes, and Auto Mode receive the safe memory summary through workspace context, so Borger can remember project decisions without reading sensitive local files.
+
+`Clear Project Memory` confirms first, then removes only the two memory files. It does not delete unrelated `.borger` files.
+
+Next, Phase 13 is expected to focus on polish, packaging, and VSIX readiness.
 
 ## Permission System
 
@@ -334,4 +359,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 10: Controlled Auto Mode - implemented
 - Phase 11: Git/GitHub workflow - implemented
 - Phase 12: SSH and Remote Ops - implemented
+- Phase 12B: Project Memory and Local Notes - implemented
 - Phase 13+: Not started

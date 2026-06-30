@@ -5,6 +5,8 @@ import { ProviderRouter } from "../providers/providerRouter";
 import { ProviderSelection, ProviderStatusReport } from "../providers/types";
 import { readGitStatus, GitStatusSummary } from "../tools/git";
 import { inspectWorkspace, WorkspaceSummary } from "../tools/workspace";
+import { getSafeProjectMemoryContext } from "../memory/projectMemory";
+import { ProjectMemoryContext } from "../memory/memoryTypes";
 
 export interface PermissionProfileSummary {
   profile: string;
@@ -40,13 +42,15 @@ export interface WorkspaceContext extends WorkspaceSummary {
   activeProvider?: ActiveProviderSummary;
   gitStatus: GitStatusSummary;
   relevantFiles: RelevantFileRanking[];
+  projectMemory: ProjectMemoryContext;
 }
 
 export async function buildWorkspaceContext(context: vscode.ExtensionContext, task?: string): Promise<WorkspaceContext> {
-  const [workspace, permissionProfile, activeProvider] = await Promise.all([
+  const [workspace, permissionProfile, activeProvider, projectMemory] = await Promise.all([
     inspectWorkspace(),
     buildPermissionProfileSummary(),
-    buildActiveProviderSummary(context)
+    buildActiveProviderSummary(context),
+    getSafeProjectMemoryContext()
   ]);
 
   const gitStatus = await buildGitStatusSummary(workspace);
@@ -55,7 +59,8 @@ export async function buildWorkspaceContext(context: vscode.ExtensionContext, ta
     generatedAt: new Date().toISOString(),
     permissionProfile,
     activeProvider,
-    gitStatus
+    gitStatus,
+    projectMemory
   };
 
   return {
@@ -102,6 +107,7 @@ export function formatWorkspaceContextForOutput(context: WorkspaceContext): stri
     `Git: ${git}`,
     `Permission profile: ${context.permissionProfile.label} (${context.permissionProfile.profile})`,
     `Active provider: ${provider}`,
+    `Project memory: ${formatMemorySummary(context.projectMemory)}`,
     `Current file: ${context.openFile || "none"}`,
     `Selected text: ${context.selectedText ? `${context.selectedText.text.length} characters` : "none"}`,
     `Relevant files: ${
@@ -285,6 +291,14 @@ function rankRelevantFiles(
     .filter((file) => file.score > 1)
     .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
     .slice(0, 12);
+}
+
+function formatMemorySummary(memory: ProjectMemoryContext): string {
+  if (!memory.available) {
+    return "none saved";
+  }
+  const noteCount = memory.recentNotes.length;
+  return `${memory.summary || "summary saved"}; ${memory.importantDecisions.length} decisions; ${memory.knownLimitations.length} limitations; ${noteCount} recent notes`;
 }
 
 function addScore(scores: Map<string, { score: number; reasons: string[] }>, path: string, score: number, reason: string): void {

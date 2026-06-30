@@ -68,6 +68,10 @@ import {
   formatRemoteInspectionForOutput,
   formatRemoteOpsStateForOutput
 } from "../ui/remoteOpsFormatter";
+import { addProjectNote as addProjectNoteToStore } from "../memory/projectNotes";
+import { clearProjectMemory as clearProjectMemoryStore, getProjectMemoryState, updateProjectSummaryFromContext } from "../memory/projectMemory";
+import { ProjectNoteType } from "../memory/memoryTypes";
+import { formatProjectMemoryStateForOutput, formatProjectNoteForOutput } from "../memory/memoryFormatter";
 
 export class AgentPanel implements vscode.WebviewViewProvider {
   static readonly viewType = "borger.agentView";
@@ -107,6 +111,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.postAutoModeState();
     this.postGitWorkflowState();
     void this.postRemoteOpsState();
+    void this.postProjectMemoryState();
   }
 
   async focus(): Promise<void> {
@@ -161,6 +166,18 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     } catch (error) {
       this.view?.webview.postMessage({
         type: "remoteOpsState",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  async postProjectMemoryState(): Promise<void> {
+    try {
+      const projectMemory = await getProjectMemoryState();
+      this.view?.webview.postMessage({ type: "projectMemoryState", projectMemory });
+    } catch (error) {
+      this.view?.webview.postMessage({
+        type: "projectMemoryState",
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -436,6 +453,91 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     this.output.appendLine(formatRemoteHistoryForOutput(history));
     await this.postRemoteOpsState();
     this.postState("Remote history shown");
+  }
+
+  async showProjectMemory(): Promise<void> {
+    this.postState("Loading project memory...");
+    const state = await getProjectMemoryState();
+    const permissionState = await loadPermissionState();
+    await logAction({
+      actionType: "project_memory_loaded",
+      allowed: true,
+      requiresConfirmation: false,
+      reason: "Loaded local project memory and notes.",
+      profile: permissionState.profile.id,
+      status: "succeeded"
+    });
+    this.output.show(true);
+    this.output.appendLine(formatProjectMemoryStateForOutput(state));
+    await this.postProjectMemoryState();
+  }
+
+  async addProjectNote(): Promise<void> {
+    const title = await vscode.window.showInputBox({
+      title: "Borger Add Project Note",
+      prompt: "Short note title. Do not include secrets.",
+      ignoreFocusOut: true
+    });
+    if (!title) {
+      return;
+    }
+
+    const typePick = await vscode.window.showQuickPick<NoteTypePick>(
+      projectNoteTypePicks,
+      {
+        title: "Borger Project Note Type",
+        placeHolder: "Choose what kind of memory this is"
+      }
+    );
+    if (!typePick) {
+      return;
+    }
+
+    const body = await vscode.window.showInputBox({
+      title: "Borger Add Project Note",
+      prompt: "Note body. Do not include secrets, tokens, private keys, or .env contents.",
+      ignoreFocusOut: true
+    });
+    if (body === undefined) {
+      return;
+    }
+
+    const tagsInput = await vscode.window.showInputBox({
+      title: "Borger Project Note Tags",
+      prompt: "Optional comma-separated tags.",
+      placeHolder: "phase-12b, architecture",
+      ignoreFocusOut: true
+    });
+
+    this.postState("Adding project note...");
+    const note = await addProjectNoteToStore({
+      title,
+      type: typePick.type,
+      body,
+      tags: splitTags(tagsInput)
+    });
+    this.output.show(true);
+    this.output.appendLine(formatProjectNoteForOutput(note));
+    await this.postProjectMemoryState();
+  }
+
+  async updateProjectSummary(): Promise<void> {
+    this.postState("Updating project summary...");
+    const workspaceContext = await buildWorkspaceContext(this.context, "Update local project memory summary");
+    const memory = await updateProjectSummaryFromContext(this.context, workspaceContext);
+    this.output.show(true);
+    this.output.appendLine(`Updated project memory summary for ${memory.projectName}.\n\n${memory.summary}`);
+    await this.postProjectMemoryState();
+    await this.postProviderStatus();
+    await this.postPermissionStatus();
+  }
+
+  async clearProjectMemory(): Promise<void> {
+    this.postState("Clearing project memory...");
+    await clearProjectMemoryStore();
+    this.output.show(true);
+    this.output.appendLine("Cleared Borger project memory and notes.");
+    await this.postProjectMemoryState();
   }
 
   async applyApprovedChanges(): Promise<void> {
@@ -744,6 +846,54 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
     if (message.type === "showRemoteHistory") {
       await this.showRemoteHistory();
+      return;
+    }
+
+    if (message.type === "showProjectMemory") {
+      try {
+        await this.showProjectMemory();
+      } catch (error) {
+        this.postState("Show project memory failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postProjectMemoryState();
+      }
+      return;
+    }
+
+    if (message.type === "addProjectNote") {
+      try {
+        await this.addProjectNote();
+      } catch (error) {
+        this.postState("Add project note failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postProjectMemoryState();
+      }
+      return;
+    }
+
+    if (message.type === "updateProjectSummary") {
+      try {
+        await this.updateProjectSummary();
+      } catch (error) {
+        this.postState("Update project summary failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postProjectMemoryState();
+      }
+      return;
+    }
+
+    if (message.type === "clearProjectMemory") {
+      try {
+        await this.clearProjectMemory();
+      } catch (error) {
+        this.postState("Clear project memory failed", {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        await this.postProjectMemoryState();
+      }
       return;
     }
 
@@ -1069,6 +1219,20 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     </section>
 
     <section class="output">
+      <div class="section-title">
+        <h2>Project Memory</h2>
+        <button id="memoryRefreshButton">Refresh</button>
+      </div>
+      <div class="actions">
+        <button id="showMemoryButton">Show Project Memory</button>
+        <button id="addNoteButton">Add Project Note</button>
+        <button id="updateSummaryButton">Update Project Summary</button>
+        <button id="clearMemoryButton">Clear Project Memory</button>
+      </div>
+      <div id="projectMemoryOutput" class="memory-output empty">No project memory loaded.</div>
+    </section>
+
+    <section class="output">
       <h2>Plan</h2>
       <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
     </section>
@@ -1193,6 +1357,29 @@ interface WebviewMessage {
   remoteCwd?: string;
 }
 
+interface NoteTypePick extends vscode.QuickPickItem {
+  type: ProjectNoteType;
+}
+
+const projectNoteTypePicks: NoteTypePick[] = [
+  { label: "Decision", type: "decision" },
+  { label: "Todo", type: "todo" },
+  { label: "Warning", type: "warning" },
+  { label: "Architecture", type: "architecture" },
+  { label: "Command", type: "command" },
+  { label: "Limitation", type: "limitation" },
+  { label: "General", type: "general" }
+];
+
 function normalizeTerminalMode(value: string | undefined): TerminalExecutionMode {
   return value === "interactive" ? "interactive" : "captured";
+}
+
+function splitTags(value: string | undefined): string[] {
+  return value
+    ? value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    : [];
 }

@@ -438,7 +438,48 @@ Blocked examples:
 
 `Borger: Inspect Remote Project` runs safe read-only commands only and summarizes the output in the sidebar and output channel. It does not copy large remote files, read secrets, deploy, or edit remote files.
 
-Phase 13 is expected to focus on polish and packaging after the remaining memory/project-notes scope is handled.
+## Project Memory
+
+Phase 12B adds local workspace memory. It helps Borger remember useful project facts across sessions without storing anything globally or in the repo.
+
+Run:
+
+```text
+Borger: Show Project Memory
+Borger: Add Project Note
+Borger: Update Project Summary
+Borger: Clear Project Memory
+```
+
+Memory files are local and ignored by git:
+
+```text
+.borger/project-memory.local.json
+.borger/project-notes.local.jsonl
+```
+
+The memory file stores summary, architecture, important decisions, known limitations, and preferred commands. The notes file stores append-only JSONL notes such as decisions, todos, warnings, architecture notes, command notes, limitations, and general notes.
+
+Never store:
+
+- `.env` contents
+- private keys
+- tokens
+- credentials
+- API keys
+- provider secrets
+- remote-host secrets
+- sensitive command output or action logs
+
+`.env.example` is allowed because it documents configuration. Borger redacts secret-like values and paths before memory reaches model prompts, and blocks obvious private-key or credential material when adding notes.
+
+`Borger: Add Project Note` does not call the model. It asks for title, type, body, and tags, then appends a sanitized note.
+
+`Borger: Update Project Summary` checks `read_workspace`, builds safe workspace context, includes current safe memory and recent notes, calls the active routed provider, and saves a sanitized summary. Safe memory then appears in Inspect Workspace, Plan Mode, Fix Mode, proposed-change generation, and Auto Mode through workspace context.
+
+`Borger: Clear Project Memory` asks for confirmation and removes only the project memory and notes files.
+
+Phase 13 is expected to focus on polish, packaging, and VSIX readiness.
 
 ## Commands
 
@@ -462,6 +503,10 @@ Phase 13 is expected to focus on polish and packaging after the remaining memory
 - `Borger: Run Remote Command`
 - `Borger: Inspect Remote Project`
 - `Borger: Show Remote History`
+- `Borger: Show Project Memory`
+- `Borger: Add Project Note`
+- `Borger: Update Project Summary`
+- `Borger: Clear Project Memory`
 - `Borger: Fix Diagnostics`
 - `Borger: Fix Last Failed Command`
 - `Borger: Fix Current File`

@@ -135,6 +135,17 @@ http://localhost:4000/v1
 - If output is too large or truncated, rerun a narrower read-only command.
 - Remote history is in memory for the current VS Code session. Remote authorization and lifecycle events are logged to `.borger/action-log.jsonl`.
 
+## Project Memory Issues
+
+- If memory does not appear, run `Borger: Show Project Memory` and confirm `.borger/project-memory.local.json` or `.borger/project-notes.local.jsonl` exists.
+- If adding a note is blocked, check `Borger: Show Permissions` and confirm workspace write permissions are enabled.
+- If a note is blocked by memory policy, remove secrets, private keys, tokens, credentials, or `.env` contents from the note.
+- If secret-like text is redacted, that is expected. Memory is meant for durable project context, not credential storage.
+- If `Update Project Summary` fails, check provider availability, provider budget status, LiteLLM connectivity, and `read_workspace` permission.
+- If memory files are malformed, clear them with `Borger: Clear Project Memory` or edit the ignored local files manually.
+- If Plan/Fix/Auto Mode seems to use stale context, update the project summary or clear outdated notes.
+- Memory files are ignored by git. Do not force-add `.borger/project-memory.local.json` or `.borger/project-notes.local.jsonl`.
+
 ## Modal and Hugging Face Issues
 
 - Wrong Modal endpoint: copy the URL printed by `modal deploy infra/modal/modal_qwen_h200_sglang.py` and add `/v1` for LiteLLM.

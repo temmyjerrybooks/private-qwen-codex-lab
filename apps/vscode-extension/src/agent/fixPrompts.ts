@@ -18,6 +18,8 @@ Do not write files.
 Do not run commands.
 Do not commit, push, deploy, use SSH, or perform external actions.
 Return strict JSON only.
+Use safe projectMemory from the workspace context when it helps preserve project decisions, known limitations, or preferred commands.
+Do not ask for, expose, or rely on secrets, tokens, private keys, .env contents, or credential material.
 
 Fix source:
 ${input.source}
@@ -74,6 +76,8 @@ Do not propose file changes.
 Do not return JSON.
 Do not run commands.
 Do not claim that you changed anything.
+Use safe projectMemory from the workspace context when it helps explain project-specific decisions or limitations.
+Do not ask for, expose, or rely on secrets, tokens, private keys, .env contents, or credential material.
 
 User request or extra context:
 ${input.userTask?.trim() || "No extra user context provided."}

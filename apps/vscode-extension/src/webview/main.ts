@@ -31,6 +31,12 @@ const testSshButton = document.getElementById("testSshButton");
 const inspectRemoteButton = document.getElementById("inspectRemoteButton");
 const runRemoteCommandButton = document.getElementById("runRemoteCommandButton");
 const showRemoteHistoryButton = document.getElementById("showRemoteHistoryButton");
+const projectMemoryOutputEl = document.getElementById("projectMemoryOutput");
+const memoryRefreshButton = document.getElementById("memoryRefreshButton");
+const showMemoryButton = document.getElementById("showMemoryButton");
+const addNoteButton = document.getElementById("addNoteButton");
+const updateSummaryButton = document.getElementById("updateSummaryButton");
+const clearMemoryButton = document.getElementById("clearMemoryButton");
 const fixStatusEl = document.getElementById("fixStatus");
 const fixOutputEl = document.getElementById("fixOutput");
 const fixRefreshButton = document.getElementById("fixRefreshButton");
@@ -164,6 +170,26 @@ remoteCommandInputEl?.addEventListener("keydown", (event) => {
 
 showRemoteHistoryButton?.addEventListener("click", () => {
   vscode.postMessage({ type: "showRemoteHistory" });
+});
+
+memoryRefreshButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showProjectMemory" });
+});
+
+showMemoryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "showProjectMemory" });
+});
+
+addNoteButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "addProjectNote" });
+});
+
+updateSummaryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "updateProjectSummary" });
+});
+
+clearMemoryButton?.addEventListener("click", () => {
+  vscode.postMessage({ type: "clearProjectMemory" });
 });
 
 remoteHostSelectEl?.addEventListener("change", () => {
@@ -327,6 +353,11 @@ window.addEventListener("message", (event: MessageEvent<WebviewResponse>) => {
     remoteOpsOutputEl.innerHTML = renderRemoteOpsState(message.remoteOps, message.error);
   }
 
+  if (message.type === "projectMemoryState" && projectMemoryOutputEl) {
+    projectMemoryOutputEl.classList.toggle("empty", !message.projectMemory || !message.projectMemory.context.available);
+    projectMemoryOutputEl.innerHTML = renderProjectMemoryState(message.projectMemory, message.error);
+  }
+
   if (message.type === "fixStatus" && fixStatusEl) {
     fixStatusEl.innerHTML = renderFixStatus(message.fixStatus, message.error);
   }
@@ -352,6 +383,7 @@ interface WebviewResponse {
     | "autoModeState"
     | "gitWorkflowState"
     | "remoteOpsState"
+    | "projectMemoryState"
     | "fixStatus"
     | "fixResult"
     | "commandHistory";
@@ -365,6 +397,7 @@ interface WebviewResponse {
   autoMode?: AutoModeRunStateMessage;
   git?: GitWorkflowStateMessage;
   remoteOps?: RemoteOpsStateMessage;
+  projectMemory?: ProjectMemoryStateMessage;
   result?: FixModeResultMessage;
   fixStatus?: FixModeStatusMessage;
   history?: TerminalCommandResultMessage[];
@@ -426,6 +459,7 @@ interface WorkspaceContextMessage {
     text: string;
   };
   importantFiles?: Array<{ path: string }>;
+  projectMemory?: ProjectMemoryContextMessage;
 }
 
 interface ProviderStatusReport {
@@ -729,6 +763,54 @@ interface RemoteOpsStateMessage {
   latestInspection?: RemoteInspectionResultMessage;
 }
 
+interface ProjectMemoryMessage {
+  projectName: string;
+  summary: string;
+  architecture: string[];
+  importantDecisions: string[];
+  knownLimitations: string[];
+  preferredCommands: string[];
+  lastUpdatedAt: string;
+}
+
+interface ProjectNoteMessage {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  type: "decision" | "todo" | "warning" | "architecture" | "command" | "limitation" | "general";
+  title: string;
+  body: string;
+  tags: string[];
+}
+
+interface ProjectMemoryContextMessage {
+  available: boolean;
+  summary?: string;
+  architecture: string[];
+  importantDecisions: string[];
+  knownLimitations: string[];
+  preferredCommands: string[];
+  recentNotes: Array<Pick<ProjectNoteMessage, "id" | "type" | "title" | "body" | "tags" | "updatedAt">>;
+  source: string;
+  warning?: string;
+}
+
+interface ProjectMemoryStateMessage {
+  memory: {
+    memory?: ProjectMemoryMessage;
+    source: "default" | "local" | "malformed";
+    uri: string;
+    warning?: string;
+  };
+  notes: {
+    notes: ProjectNoteMessage[];
+    source: "default" | "local" | "malformed";
+    uri: string;
+    warning?: string;
+  };
+  context: ProjectMemoryContextMessage;
+}
+
 interface TerminalCommandResultMessage {
   id: string;
   command: string;
@@ -828,7 +910,13 @@ function renderContextStatus(body: unknown): string {
     ["Current", body.openFile || "none"],
     ["Selection", body.selectedText ? `${body.selectedText.text.length} chars` : "none"],
     ["Diagnostics", diagnostics],
-    ["Git", git]
+    ["Git", git],
+    [
+      "Memory",
+      body.projectMemory?.available
+        ? `${body.projectMemory.summary || "saved"}; ${body.projectMemory.recentNotes.length} recent notes`
+        : "none saved"
+    ]
   ];
 
   return rows.map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join("");
@@ -1215,6 +1303,74 @@ function renderRemoteResult(result: RemoteCommandResultMessage): string {
       ${result.stdout ? `<pre class="terminal-block">${escapeHtml(result.stdout)}</pre>` : '<p class="muted">No stdout.</p>'}
       ${result.stderr ? `<pre class="terminal-block stderr">${escapeHtml(result.stderr)}</pre>` : ""}
     </article>`;
+}
+
+function renderProjectMemoryState(state: ProjectMemoryStateMessage | undefined, error: string | undefined): string {
+  if (error) {
+    return `<div class="empty">Project Memory unavailable: ${escapeHtml(error)}</div>`;
+  }
+  if (!state || !state.context.available) {
+    return `<article class="memory-card">
+      <p class="muted">No project memory saved yet. Add a note or update the project summary.</p>
+      <dl class="git-summary">
+        <div><dt>Memory</dt><dd>${escapeHtml(state?.memory.uri || ".borger/project-memory.local.json")}</dd></div>
+        <div><dt>Notes</dt><dd>${escapeHtml(state?.notes.uri || ".borger/project-notes.local.jsonl")}</dd></div>
+      </dl>
+    </article>`;
+  }
+
+  const context = state.context;
+  const notes = context.recentNotes.length > 0
+    ? `<ul class="memory-list">${context.recentNotes
+        .map(
+          (note) =>
+            `<li><strong>${escapeHtml(`[${note.type}] ${note.title}`)}</strong><span>${escapeHtml(
+              note.body || note.tags.join(", ") || note.updatedAt
+            )}</span></li>`
+        )
+        .join("")}</ul>`
+    : '<p class="muted">No notes saved yet.</p>';
+
+  return `
+    <article class="memory-card">
+      <dl class="git-summary">
+        <div><dt>Source</dt><dd>${escapeHtml(context.source)}</dd></div>
+        <div><dt>Memory</dt><dd>${escapeHtml(state.memory.uri)}</dd></div>
+        <div><dt>Notes</dt><dd>${state.notes.notes.length} saved</dd></div>
+        <div><dt>Warning</dt><dd>${escapeHtml(context.warning || state.memory.warning || state.notes.warning || "none")}</dd></div>
+      </dl>
+      <section class="plan-section">
+        <h4>Summary</h4>
+        <p>${escapeHtml(context.summary || "No summary saved yet.")}</p>
+      </section>
+      <section class="plan-section">
+        <h4>Architecture</h4>
+        ${renderMemoryList(context.architecture)}
+      </section>
+      <section class="plan-section">
+        <h4>Important Decisions</h4>
+        ${renderMemoryList(context.importantDecisions)}
+      </section>
+      <section class="plan-section">
+        <h4>Known Limitations</h4>
+        ${renderMemoryList(context.knownLimitations)}
+      </section>
+      <section class="plan-section">
+        <h4>Preferred Commands</h4>
+        ${renderMemoryList(context.preferredCommands, true)}
+      </section>
+      <section class="plan-section">
+        <h4>Recent Notes</h4>
+        ${notes}
+      </section>
+    </article>`;
+}
+
+function renderMemoryList(values: string[], code = false): string {
+  if (values.length === 0) {
+    return '<p class="muted">None saved.</p>';
+  }
+  return `<ul class="memory-list">${values.map((value) => `<li>${code ? `<code>${escapeHtml(value)}</code>` : escapeHtml(value)}</li>`).join("")}</ul>`;
 }
 
 function renderFixStatus(status: FixModeStatusMessage | undefined, error: string | undefined): string {

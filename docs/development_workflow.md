@@ -121,3 +121,14 @@
 10. Review confirmation prompts for installs, restarts, git pulls, Docker changes, and other risky commands.
 11. Use `Borger: Show Remote History` and `.borger/action-log.jsonl` when auditing remote activity.
 12. Keep deployment automation, remote file editing, host scanning, brute forcing, and secret reads out of Phase 12.
+
+## Project Memory Workflow
+
+1. Run `Borger: Show Project Memory` to review saved local context.
+2. Use `Borger: Add Project Note` for durable project facts such as architecture decisions, todos, warnings, useful commands, and limitations.
+3. Do not store `.env` contents, private keys, tokens, credentials, provider secrets, remote-host secrets, or sensitive runtime logs.
+4. Run `Borger: Update Project Summary` after meaningful project changes or after adding several notes.
+5. Review the generated summary before relying on it in future tasks.
+6. Run `Borger: Clear Project Memory` when notes become stale or the workspace should forget local context.
+7. Expect Plan Mode, Fix Mode, proposed changes, and Auto Mode to use only the safe capped memory summary from workspace context.
+8. Keep packaging and VSIX release work for Phase 13.
