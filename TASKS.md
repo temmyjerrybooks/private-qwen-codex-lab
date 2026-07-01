@@ -254,4 +254,25 @@
 
 ## Later Phases
 
-- Phase 14: Recommended focus on end-to-end QA hardening and issue cleanup
+## Phase 14 - End-to-End QA Hardening and Packaged Extension Validation
+
+- Run `npm.cmd run check-types`
+- Run `npm.cmd run compile`
+- Run `npm.cmd run package`
+- Install the generated VSIX locally with `code --install-extension`
+- Confirm installed extension appears in VS Code extension list
+- Validate contributed command activation events
+- Validate command IDs appear in compiled output
+- Confirm packaged webview assets exist under `dist/webview`
+- Move webview CSS loading from raw `src` to packaged `dist`
+- Exclude raw `src/**` from VSIX package
+- Confirm local `.borger` runtime files, `.env` files, action logs, memory files, remote-host config, provider config, backups, and generated VSIX are ignored
+- Document command-palette smoke coverage and external setup requirements
+- Add Phase 14 QA report
+- Update release checklist, VSIX packaging docs, quickstart, troubleshooting, README, and acceptance criteria
+- Keep safety defaults intact
+- Avoid new agent capabilities, new SSH behavior, deployment automation, destructive Git behavior, and marketplace publishing
+
+## Later Phases
+
+- Phase 15: Recommended focus on interactive Extension Host QA, provider-backed runtime testing, and dependency bundling in an unrestricted local environment

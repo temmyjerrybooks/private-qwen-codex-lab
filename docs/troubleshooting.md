@@ -21,6 +21,9 @@
 - If packaging warns about ignored files, check `apps/vscode-extension/.vscodeignore`.
 - If the generated file name differs, install the `.vsix` produced by `npm.cmd run package`.
 - Generated `.vsix` files are ignored by git.
+- If `vsce` warns about many JavaScript files, that is a packaging-size warning. The current package still ships runtime dependencies because full bundling needs separate QA.
+- If `code --install-extension` prints a crashpad, log-folder, or `url.parse()` warning but reports the extension was installed, treat the install as successful and confirm with `code --list-extensions --show-versions | Select-String borger`.
+- If the sidebar opens without styling, rerun `npm.cmd run compile` and confirm `dist/webview/styles.css` exists.
 
 ## LiteLLM Connection Failures
 

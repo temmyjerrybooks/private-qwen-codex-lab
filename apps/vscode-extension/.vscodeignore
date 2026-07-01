@@ -7,8 +7,7 @@ coverage/**
 .borger/**
 *.local.json
 *.local.jsonl
-src/**/*.ts
-!src/webview/styles.css
+src/**
 tsconfig.json
 esbuild.js
 npm-debug.log*

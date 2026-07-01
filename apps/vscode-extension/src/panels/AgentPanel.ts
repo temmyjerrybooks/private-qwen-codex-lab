@@ -92,8 +92,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this.extensionUri, "dist", "webview"),
-        vscode.Uri.joinPath(this.extensionUri, "src", "webview")
+        vscode.Uri.joinPath(this.extensionUri, "dist", "webview")
       ]
     };
 
@@ -1097,7 +1096,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
 
   private getHtml(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "main.js"));
-    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "src", "webview", "styles.css"));
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "dist", "webview", "styles.css"));
     const config = getBorgerConfig();
 
     return String.raw`<!DOCTYPE html>

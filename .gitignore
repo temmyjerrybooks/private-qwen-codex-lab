@@ -11,6 +11,7 @@ apps/**/.env.*
 !apps/**/.env.example
 *.vsix
 coverage/
+debug.log
 .borger/*.local.json
 .borger/*.local.jsonl
 .borger/*.local.env

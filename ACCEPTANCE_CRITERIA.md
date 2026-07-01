@@ -410,3 +410,21 @@
 - `npm.cmd run check-types` passes
 - `npm.cmd run compile` passes
 - `npm.cmd run package` produces a local `.vsix` file
+
+## Phase 14
+
+- `npm.cmd run check-types` passes
+- `npm.cmd run compile` passes
+- `npm.cmd run package` passes
+- Generated VSIX installs locally with `code --install-extension`
+- Installed extension appears as `temmyjerrybooks.borger-vscode-agent@0.13.0`
+- All contributed commands have activation events
+- All contributed command IDs appear in compiled `dist` output
+- Packaged webview JavaScript and CSS exist under `dist/webview`
+- Raw `src/**` files are excluded from the VSIX package
+- Auto Mode remains disabled by default
+- Protected files remain ignored, including real `.env` files, `.borger` local config/state/log/memory files, backups, and generated VSIX files
+- `docs/qa_report_phase_14.md` exists
+- Release checklist reflects the real Phase 14 QA steps
+- External provider, LiteLLM, SSH, and GitHub commands are documented as requiring local setup for full runtime testing
+- No major new capabilities are added

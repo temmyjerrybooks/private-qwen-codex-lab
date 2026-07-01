@@ -392,4 +392,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 12: SSH and Remote Ops - implemented
 - Phase 12B: Project Memory and Local Notes - implemented
 - Phase 13: Polish, packaging, VSIX readiness, and release checklist - implemented
-- Phase 14+: Not started
+- Phase 14: End-to-end QA hardening and packaged extension validation - implemented
+- Phase 15+: Not started

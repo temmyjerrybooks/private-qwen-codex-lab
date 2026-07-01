@@ -25,6 +25,20 @@ npm.cmd run compile
 5. Run `Borger: Show Permissions`.
 6. Run `Borger: Plan Task`.
 
+## Install The Packaged Extension
+
+```powershell
+cd apps/vscode-extension
+npm.cmd run package
+code --install-extension .\borger-vscode-agent-0.13.0.vsix --force
+```
+
+Confirm installation:
+
+```powershell
+code --list-extensions --show-versions | Select-String borger
+```
+
 ## Configure LiteLLM
 
 Start LiteLLM locally after Modal is deployed:
