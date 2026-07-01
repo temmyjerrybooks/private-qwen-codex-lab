@@ -4,8 +4,9 @@
 
 ```powershell
 cd apps/vscode-extension
-npm install
-npm run compile
+npm.cmd install
+npm.cmd run check-types
+npm.cmd run compile
 ```
 
 Open the repository in VS Code and press `F5` to launch an Extension Development Host.
@@ -29,7 +30,24 @@ For Phase 3, `borger.litellmBaseUrl` should point at the local LiteLLM gateway, 
 
 ## Sidebar
 
-Open the Borger activity bar item. The sidebar shows context, permission, provider, task input, and plan output sections. Tasks, Changes, Memory, and Settings sections exist as placeholders for later phases.
+Open the Borger activity bar item. The sidebar shows context, permissions, provider status, task input, Auto Mode, Git Workflow, Remote Ops, Project Memory, Plan, Fix Mode, Pending Changes, and Terminal sections.
+
+## Install A Local VSIX
+
+Build the package:
+
+```powershell
+cd apps/vscode-extension
+npm.cmd run package
+```
+
+Install the generated VSIX:
+
+```powershell
+code --install-extension apps/vscode-extension/borger-vscode-agent-0.13.0.vsix
+```
+
+The package command is local-only and does not publish to the Marketplace.
 
 ## Workspace Context
 

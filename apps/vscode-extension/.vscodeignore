@@ -1,0 +1,16 @@
+.vscode/**
+.vscode-test/**
+coverage/**
+*.vsix
+.env
+.env.*
+.borger/**
+*.local.json
+*.local.jsonl
+src/**/*.ts
+!src/webview/styles.css
+tsconfig.json
+esbuild.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

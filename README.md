@@ -1,8 +1,8 @@
 # Borger
 
-Borger is a private VS Code coding-agent extension for planning, inspecting, and eventually editing software projects from inside Visual Studio Code.
+Borger is a private VS Code coding-agent extension for planning, inspecting, editing, verifying, fixing, and organizing software projects from inside Visual Studio Code.
 
-Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Phase 12 adds controlled SSH and Remote Ops. Phase 12B adds local project memory and notes. Later phases add polish and packaging.
+Phase 1 implements the repository foundation and a working VS Code extension shell. Phase 2 adds the Modal H200:2 SGLang deployment for the primary model. Phase 2.5 adds a private multi-provider budget router for authorized group endpoints. Phase 3 wires LiteLLM as the local gateway in front of the Modal endpoint. Phase 4 adds workspace context intelligence for repo-aware planning. Phase 5 upgrades Plan Mode into a structured senior-engineer planning workflow. Phase 6 adds proposed edit parsing and diff preview. Phase 7 applies approved create/modify file changes with safety checks and backups. Phase 8 adds controlled local terminal command execution. Phase 9 adds Fix Mode for diagnostics and captured command failures. Phase 10 adds controlled local Auto Mode. Phase 11 adds controlled Git/GitHub workflow support. Phase 12 adds controlled SSH and Remote Ops. Phase 12B adds local project memory and notes. Phase 13 prepares Borger for local VSIX packaging and release QA.
 
 ## Architecture
 
@@ -21,12 +21,39 @@ Phase 1 includes the VS Code extension shell, read-only workspace inspection, a 
 
 ```powershell
 cd apps/vscode-extension
-npm install
-npm run compile
+npm.cmd install
+npm.cmd run check-types
+npm.cmd run compile
 ```
 
 Then open the repository in VS Code and press `F5` to launch an Extension Development Host.
 The root `.vscode/launch.json` points VS Code at `apps/vscode-extension`.
+
+For a shorter setup path, see [docs/local_setup_quickstart.md](docs/local_setup_quickstart.md).
+
+## Package A Local VSIX
+
+```powershell
+cd apps/vscode-extension
+npm.cmd install
+npm.cmd run check-types
+npm.cmd run compile
+npm.cmd run package
+```
+
+Expected output:
+
+```text
+apps/vscode-extension/borger-vscode-agent-0.13.0.vsix
+```
+
+Install locally with:
+
+```powershell
+code --install-extension apps/vscode-extension/borger-vscode-agent-0.13.0.vsix
+```
+
+See [docs/vsix_packaging.md](docs/vsix_packaging.md) and [docs/release_checklist.md](docs/release_checklist.md).
 
 ## Development Setup
 
@@ -317,7 +344,11 @@ Never store secrets in memory: no `.env` contents, private keys, tokens, credent
 
 `Clear Project Memory` confirms first, then removes only the two memory files. It does not delete unrelated `.borger` files.
 
-Next, Phase 13 is expected to focus on polish, packaging, and VSIX readiness.
+## Safety Model
+
+Borger is private local tooling. It keeps local configuration and runtime state under ignored `.borger/` files, stores provider keys in local secrets/config, and avoids reading secret-like files into model context. Review diffs before applying changes, keep Auto Mode disabled unless deliberately enabled, and keep Git push, SSH, and remote operations behind explicit permission profiles.
+
+See [docs/security_privacy.md](docs/security_privacy.md) for the current privacy and safety guidance.
 
 ## Permission System
 
@@ -360,4 +391,5 @@ Both files are ignored by git. Use `Borger: Show Permissions` to inspect the act
 - Phase 11: Git/GitHub workflow - implemented
 - Phase 12: SSH and Remote Ops - implemented
 - Phase 12B: Project Memory and Local Notes - implemented
-- Phase 13+: Not started
+- Phase 13: Polish, packaging, VSIX readiness, and release checklist - implemented
+- Phase 14+: Not started

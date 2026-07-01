@@ -10,6 +10,17 @@
 
 - Confirm Node.js and npm are installed
 - Reinstall dependencies inside `apps/vscode-extension`
+- Run `npm.cmd run check-types` before `npm.cmd run compile` when you want a narrower TypeScript failure.
+
+## VSIX Packaging Issues
+
+- Run packaging from `apps/vscode-extension`.
+- Confirm dependencies are installed with `npm.cmd install`.
+- Confirm `npm.cmd run check-types` and `npm.cmd run compile` pass first.
+- If `vsce` is missing, reinstall dependencies; the repo uses project-local `@vscode/vsce`.
+- If packaging warns about ignored files, check `apps/vscode-extension/.vscodeignore`.
+- If the generated file name differs, install the `.vsix` produced by `npm.cmd run package`.
+- Generated `.vsix` files are ignored by git.
 
 ## LiteLLM Connection Failures
 

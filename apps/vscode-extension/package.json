@@ -1,21 +1,54 @@
 {
   "name": "borger-vscode-agent",
   "displayName": "Borger",
-  "description": "Private VS Code coding-agent extension.",
-  "version": "0.1.0",
-  "publisher": "private",
+  "description": "Private VS Code coding agent for repo-aware planning, safe edits, terminal verification, Git workflows, Remote Ops, and local project memory.",
+  "version": "0.13.0",
+  "publisher": "temmyjerrybooks",
+  "private": true,
+  "license": "UNLICENSED",
+  "icon": "media/borger-icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/temmyjerrybooks/private-qwen-codex-lab.git"
+  },
+  "homepage": "https://github.com/temmyjerrybooks/private-qwen-codex-lab#readme",
+  "bugs": {
+    "url": "https://github.com/temmyjerrybooks/private-qwen-codex-lab/issues"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
+    "Machine Learning",
     "Other"
+  ],
+  "keywords": [
+    "ai",
+    "coding-agent",
+    "vscode",
+    "litellm",
+    "modal",
+    "sglang",
+    "qwen",
+    "private-agent",
+    "developer-tools"
   ],
   "activationEvents": [
     "onView:borger.agentView",
+    "onView:borger.tasksView",
+    "onView:borger.changesView",
+    "onView:borger.memoryView",
+    "onView:borger.settingsView",
     "onCommand:borger.openAgent",
     "onCommand:borger.inspectWorkspace",
     "onCommand:borger.testModelConnection",
     "onCommand:borger.planTask",
+    "onCommand:borger.askAboutFile",
+    "onCommand:borger.explainSelection",
+    "onCommand:borger.fixSelection",
+    "onCommand:borger.generateTests",
+    "onCommand:borger.refactorSelection",
+    "onCommand:borger.runAgentTask",
     "onCommand:borger.generateProposedChanges",
     "onCommand:borger.runAutoMode",
     "onCommand:borger.stopAutoMode",
@@ -49,19 +82,21 @@
     "onCommand:borger.runSuggestedCommand",
     "onCommand:borger.showCommandHistory",
     "onCommand:borger.clearCommandHistory",
+    "onCommand:borger.showPermissions",
+    "onCommand:borger.updatePermissionProfile",
     "onCommand:borger.manageProviders",
     "onCommand:borger.checkProviderBudgets",
     "onCommand:borger.switchProvider",
     "onCommand:borger.showProviderStatus",
-    "onCommand:borger.resetProviderState",
-    "onCommand:borger.showPermissions",
-    "onCommand:borger.updatePermissionProfile"
+    "onCommand:borger.resetProviderState"
   ],
   "main": "./dist/extension.js",
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "npm run check-types && node esbuild.js",
     "watch": "node esbuild.js --watch",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "package": "vsce package"
   },
   "dependencies": {
     "diff": "^5.2.0",
@@ -75,6 +110,7 @@
   "devDependencies": {
     "@types/node": "^20.14.15",
     "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.23.0",
     "typescript": "^5.5.4"
   },
@@ -331,203 +367,253 @@
     "commands": [
       {
         "command": "borger.openAgent",
-        "title": "Borger: Open Agent"
+        "title": "Open Agent",
+        "category": "Borger"
       },
       {
         "command": "borger.inspectWorkspace",
-        "title": "Borger: Inspect Workspace"
+        "title": "Inspect Workspace",
+        "category": "Borger"
       },
       {
         "command": "borger.testModelConnection",
-        "title": "Borger: Test Model Connection"
+        "title": "Test Model Connection",
+        "category": "Borger"
       },
       {
         "command": "borger.planTask",
-        "title": "Borger: Plan Task"
+        "title": "Plan Task",
+        "category": "Borger"
       },
       {
         "command": "borger.askAboutFile",
-        "title": "Borger: Ask About Current File"
+        "title": "Ask About Current File",
+        "category": "Borger"
       },
       {
         "command": "borger.explainSelection",
-        "title": "Borger: Explain Selection"
+        "title": "Explain Selection",
+        "category": "Borger"
       },
       {
         "command": "borger.fixSelection",
-        "title": "Borger: Fix Selection"
+        "title": "Fix Selection",
+        "category": "Borger"
       },
       {
         "command": "borger.generateTests",
-        "title": "Borger: Generate Tests"
+        "title": "Generate Tests",
+        "category": "Borger"
       },
       {
         "command": "borger.refactorSelection",
-        "title": "Borger: Refactor Selection"
+        "title": "Refactor Selection",
+        "category": "Borger"
       },
       {
         "command": "borger.runAgentTask",
-        "title": "Borger: Run Agent Task"
+        "title": "Run Agent Task",
+        "category": "Borger"
       },
       {
         "command": "borger.generateProposedChanges",
-        "title": "Borger: Generate Proposed Changes"
+        "title": "Generate Proposed Changes",
+        "category": "Borger"
       },
       {
         "command": "borger.runAutoMode",
-        "title": "Borger: Run Auto Mode"
+        "title": "Run Auto Mode",
+        "category": "Borger"
       },
       {
         "command": "borger.stopAutoMode",
-        "title": "Borger: Stop Auto Mode"
+        "title": "Stop Auto Mode",
+        "category": "Borger"
       },
       {
         "command": "borger.showAutoModeStatus",
-        "title": "Borger: Show Auto Mode Status"
+        "title": "Show Auto Mode Status",
+        "category": "Borger"
       },
       {
         "command": "borger.gitStatus",
-        "title": "Borger: Git Status"
+        "title": "Git Status",
+        "category": "Borger"
       },
       {
         "command": "borger.createGitBranch",
-        "title": "Borger: Create Git Branch"
+        "title": "Create Git Branch",
+        "category": "Borger"
       },
       {
         "command": "borger.stageGitChanges",
-        "title": "Borger: Stage Git Changes"
+        "title": "Stage Git Changes",
+        "category": "Borger"
       },
       {
         "command": "borger.generateCommitMessage",
-        "title": "Borger: Generate Commit Message"
+        "title": "Generate Commit Message",
+        "category": "Borger"
       },
       {
         "command": "borger.createGitCommit",
-        "title": "Borger: Create Git Commit"
+        "title": "Create Git Commit",
+        "category": "Borger"
       },
       {
         "command": "borger.pushGitBranch",
-        "title": "Borger: Push Git Branch"
+        "title": "Push Git Branch",
+        "category": "Borger"
       },
       {
         "command": "borger.preparePullRequest",
-        "title": "Borger: Prepare Pull Request"
+        "title": "Prepare Pull Request",
+        "category": "Borger"
       },
       {
         "command": "borger.showRemoteHosts",
-        "title": "Borger: Show Remote Hosts"
+        "title": "Show Remote Hosts",
+        "category": "Borger"
       },
       {
         "command": "borger.testSshConnection",
-        "title": "Borger: Test SSH Connection"
+        "title": "Test SSH Connection",
+        "category": "Borger"
       },
       {
         "command": "borger.runRemoteCommand",
-        "title": "Borger: Run Remote Command"
+        "title": "Run Remote Command",
+        "category": "Borger"
       },
       {
         "command": "borger.inspectRemoteProject",
-        "title": "Borger: Inspect Remote Project"
+        "title": "Inspect Remote Project",
+        "category": "Borger"
       },
       {
         "command": "borger.showRemoteHistory",
-        "title": "Borger: Show Remote History"
+        "title": "Show Remote History",
+        "category": "Borger"
       },
       {
         "command": "borger.showProjectMemory",
-        "title": "Borger: Show Project Memory"
+        "title": "Show Project Memory",
+        "category": "Borger"
       },
       {
         "command": "borger.addProjectNote",
-        "title": "Borger: Add Project Note"
+        "title": "Add Project Note",
+        "category": "Borger"
       },
       {
         "command": "borger.updateProjectSummary",
-        "title": "Borger: Update Project Summary"
+        "title": "Update Project Summary",
+        "category": "Borger"
       },
       {
         "command": "borger.clearProjectMemory",
-        "title": "Borger: Clear Project Memory"
+        "title": "Clear Project Memory",
+        "category": "Borger"
       },
       {
         "command": "borger.fixDiagnostics",
-        "title": "Borger: Fix Diagnostics"
+        "title": "Fix Diagnostics",
+        "category": "Borger"
       },
       {
         "command": "borger.fixLastFailedCommand",
-        "title": "Borger: Fix Last Failed Command"
+        "title": "Fix Last Failed Command",
+        "category": "Borger"
       },
       {
         "command": "borger.fixCurrentFile",
-        "title": "Borger: Fix Current File"
+        "title": "Fix Current File",
+        "category": "Borger"
       },
       {
         "command": "borger.explainLastError",
-        "title": "Borger: Explain Last Error"
+        "title": "Explain Last Error",
+        "category": "Borger"
       },
       {
         "command": "borger.showPendingChanges",
-        "title": "Borger: Show Pending Changes"
+        "title": "Show Pending Changes",
+        "category": "Borger"
       },
       {
         "command": "borger.clearPendingChanges",
-        "title": "Borger: Clear Pending Changes"
+        "title": "Clear Pending Changes",
+        "category": "Borger"
       },
       {
         "command": "borger.applyApprovedChanges",
-        "title": "Borger: Apply Approved Changes"
+        "title": "Apply Approved Changes",
+        "category": "Borger"
       },
       {
         "command": "borger.applyCurrentPendingChange",
-        "title": "Borger: Apply Current Pending Change"
+        "title": "Apply Current Pending Change",
+        "category": "Borger"
       },
       {
         "command": "borger.revertLastApply",
-        "title": "Borger: Revert Last Apply"
+        "title": "Revert Last Apply",
+        "category": "Borger"
       },
       {
         "command": "borger.runTerminalCommand",
-        "title": "Borger: Run Terminal Command"
+        "title": "Run Terminal Command",
+        "category": "Borger"
       },
       {
         "command": "borger.runSuggestedCommand",
-        "title": "Borger: Run Suggested Command"
+        "title": "Run Suggested Command",
+        "category": "Borger"
       },
       {
         "command": "borger.showCommandHistory",
-        "title": "Borger: Show Command History"
+        "title": "Show Command History",
+        "category": "Borger"
       },
       {
         "command": "borger.clearCommandHistory",
-        "title": "Borger: Clear Command History"
+        "title": "Clear Command History",
+        "category": "Borger"
       },
       {
         "command": "borger.showPermissions",
-        "title": "Borger: Show Permissions"
+        "title": "Show Permissions",
+        "category": "Borger"
       },
       {
         "command": "borger.updatePermissionProfile",
-        "title": "Borger: Update Permission Profile"
+        "title": "Update Permission Profile",
+        "category": "Borger"
       },
       {
         "command": "borger.manageProviders",
-        "title": "Borger: Manage Providers"
+        "title": "Manage Providers",
+        "category": "Borger"
       },
       {
         "command": "borger.checkProviderBudgets",
-        "title": "Borger: Check Provider Budgets"
+        "title": "Check Provider Budgets",
+        "category": "Borger"
       },
       {
         "command": "borger.switchProvider",
-        "title": "Borger: Switch Provider"
+        "title": "Switch Provider",
+        "category": "Borger"
       },
       {
         "command": "borger.showProviderStatus",
-        "title": "Borger: Show Provider Status"
+        "title": "Show Provider Status",
+        "category": "Borger"
       },
       {
         "command": "borger.resetProviderState",
-        "title": "Borger: Reset Provider State"
+        "title": "Reset Provider State",
+        "category": "Borger"
       }
     ],
     "viewsContainers": {

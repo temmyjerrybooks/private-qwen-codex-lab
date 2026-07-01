@@ -1113,7 +1113,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     <header class="topbar">
       <div>
         <h1>Borger</h1>
-        <p id="workspace">No workspace inspected yet</p>
+        <p id="workspace">Workspace not inspected</p>
       </div>
       <span id="status">Ready</span>
     </header>
@@ -1153,11 +1153,11 @@ export class AgentPanel implements vscode.WebviewViewProvider {
     </section>
 
     <section class="task-box">
-      <textarea id="taskInput" rows="5" placeholder="Plan a task for this workspace"></textarea>
+      <textarea id="taskInput" rows="5" placeholder="Describe the engineering task"></textarea>
       <div class="actions">
-        <button id="inspectButton">Inspect</button>
-        <button id="planButton">Plan</button>
-        <button id="generateButton">Generate Proposed Changes</button>
+        <button id="inspectButton">Inspect Workspace</button>
+        <button id="planButton">Plan Task</button>
+        <button id="generateButton">Propose Changes</button>
       </div>
     </section>
 
@@ -1181,10 +1181,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
       <div class="actions">
         <button id="createBranchButton">Create Branch</button>
         <button id="stageSelectedButton">Stage Selected</button>
-        <button id="stageAllButton">Stage All Safe Files</button>
+        <button id="stageAllButton">Stage Safe Files</button>
         <button id="generateCommitMessageButton">Generate Commit Message</button>
-        <button id="createCommitButton">Commit</button>
-        <button id="pushBranchButton">Push</button>
+        <button id="createCommitButton">Create Commit</button>
+        <button id="pushBranchButton">Push Branch</button>
         <button id="preparePrButton">Prepare Pull Request</button>
       </div>
       <div id="gitWorkflowOutput" class="git-output empty">Git status has not been loaded.</div>
@@ -1215,7 +1215,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         <button id="inspectRemoteButton">Inspect Remote Project</button>
         <button id="showRemoteHistoryButton">Show Remote History</button>
       </div>
-      <div id="remoteOpsOutput" class="remote-output empty">Remote hosts have not been loaded.</div>
+      <div id="remoteOpsOutput" class="remote-output empty">Remote hosts not loaded.</div>
     </section>
 
     <section class="output">
@@ -1229,12 +1229,12 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         <button id="updateSummaryButton">Update Project Summary</button>
         <button id="clearMemoryButton">Clear Project Memory</button>
       </div>
-      <div id="projectMemoryOutput" class="memory-output empty">No project memory loaded.</div>
+      <div id="projectMemoryOutput" class="memory-output empty">Project memory not loaded.</div>
     </section>
 
     <section class="output">
       <h2>Plan</h2>
-      <div id="planOutput" class="plan-output empty">Ask Borger to inspect the workspace or plan a task.</div>
+      <div id="planOutput" class="plan-output empty">No plan generated yet.</div>
     </section>
 
     <section class="output">
@@ -1251,7 +1251,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         <button id="fixCurrentFileButton">Fix Current File</button>
         <button id="explainLastErrorButton">Explain Last Error</button>
       </div>
-      <div id="fixOutput" class="fix-output empty">No fix proposal generated.</div>
+      <div id="fixOutput" class="fix-output empty">No fix proposal yet.</div>
     </section>
 
     <section class="output">
@@ -1267,7 +1267,7 @@ export class AgentPanel implements vscode.WebviewViewProvider {
           <button id="clearPendingButton">Clear</button>
         </div>
       </div>
-      <div id="pendingChangesOutput" class="pending-output empty">No pending changes.</div>
+      <div id="pendingChangesOutput" class="pending-output empty">No pending diffs.</div>
     </section>
 
     <section class="output">
@@ -1279,10 +1279,10 @@ export class AgentPanel implements vscode.WebviewViewProvider {
         </div>
       </div>
       <div class="terminal-input-row">
-        <input id="commandInput" type="text" placeholder="npm run build">
+        <input id="commandInput" type="text" placeholder="npm.cmd run check-types">
         <button id="runCommandButton">Run</button>
       </div>
-      <div id="commandOutput" class="command-output empty">No terminal commands run this session.</div>
+      <div id="commandOutput" class="command-output empty">No captured terminal commands this session.</div>
     </section>
   </main>
   <script src="${scriptUri}"></script>

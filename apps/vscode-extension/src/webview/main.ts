@@ -924,7 +924,7 @@ function renderContextStatus(body: unknown): string {
 
 function renderPlan(plan: PlanTaskResultMessage | string | undefined): string {
   if (!plan) {
-    return '<div class="empty">Ask Borger to inspect the workspace or plan a task.</div>';
+    return '<div class="empty">No plan generated yet.</div>';
   }
 
   if (typeof plan === "string") {
@@ -982,7 +982,7 @@ function renderPlan(plan: PlanTaskResultMessage | string | undefined): string {
 
 function renderPendingChanges(changeSet: PendingChangeSetMessage | undefined): string {
   if (!changeSet) {
-    return '<div class="empty">No pending changes.</div>';
+    return '<div class="empty">No pending diffs.</div>';
   }
 
   const counts = countPendingStatuses(changeSet.changes);
@@ -1128,7 +1128,7 @@ function renderAutoModeState(state: AutoModeRunStateMessage | undefined): string
 
 function renderGitWorkflowState(state: GitWorkflowStateMessage | undefined): string {
   if (!state) {
-    return '<div class="empty">Git status has not been loaded.</div>';
+    return '<div class="empty">Git status not loaded.</div>';
   }
   if (!state.available) {
     return `<div class="empty">Git unavailable: ${escapeHtml(state.lastError || "status not loaded")}</div>`;
@@ -1200,7 +1200,7 @@ function renderRemoteOpsState(state: RemoteOpsStateMessage | undefined, error: s
   }
   if (!state) {
     updateRemoteHostSelect([]);
-    return '<div class="empty">Remote hosts have not been loaded.</div>';
+    return '<div class="empty">Remote hosts not loaded.</div>';
   }
 
   updateRemoteHostSelect(state.config.config.hosts);
@@ -1396,7 +1396,7 @@ function renderFixStatus(status: FixModeStatusMessage | undefined, error: string
 
 function renderFixResult(result: FixModeResultMessage | undefined): string {
   if (!result) {
-    return '<div class="empty">No fix proposal generated.</div>';
+    return '<div class="empty">No fix proposal yet.</div>';
   }
 
   const diagnostics = result.diagnostics.items.length > 0
@@ -1460,7 +1460,7 @@ function renderFixResult(result: FixModeResultMessage | undefined): string {
 
 function renderCommandHistory(history: TerminalCommandResultMessage[]): string {
   if (history.length === 0) {
-    return '<div class="empty">No terminal commands run this session.</div>';
+    return '<div class="empty">No captured terminal commands this session.</div>';
   }
 
   return history

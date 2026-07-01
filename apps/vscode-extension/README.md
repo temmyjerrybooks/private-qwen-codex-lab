@@ -1,21 +1,49 @@
 # Borger VS Code Extension
 
-Phase 1 provides a VS Code activity bar view, command registration, workspace inspection, LiteLLM connection testing, and plan-mode prompting.
+Borger is a private VS Code coding-agent extension for repo-aware planning, reviewed code changes, safe terminal verification, Fix Mode, controlled Auto Mode, Git/GitHub workflow support, allowlisted Remote Ops, and local project memory.
 
-## Commands
+## Install For Development
+
+```powershell
+npm.cmd install
+npm.cmd run check-types
+npm.cmd run compile
+```
+
+Press `F5` from the repository root to run an Extension Development Host.
+
+## Package Locally
+
+```powershell
+npm.cmd run package
+```
+
+Expected output:
+
+```text
+borger-vscode-agent-0.13.0.vsix
+```
+
+This only builds a local VSIX. It does not publish to the Marketplace.
+
+## Core Commands
 
 - `Borger: Open Agent`
 - `Borger: Inspect Workspace`
 - `Borger: Test Model Connection`
 - `Borger: Plan Task`
+- `Borger: Generate Proposed Changes`
+- `Borger: Apply Approved Changes`
+- `Borger: Run Terminal Command`
+- `Borger: Fix Diagnostics`
+- `Borger: Run Auto Mode`
+- `Borger: Git Status`
+- `Borger: Show Remote Hosts`
+- `Borger: Show Project Memory`
+- `Borger: Show Permissions`
 
-Additional command IDs are reserved for later phases and currently show placeholders.
+## Safety Defaults
 
-## Development
+Auto Mode is disabled by default. Secrets, `.borger/*.local.*` files, action logs, usage ledgers, backups, real `.env` files, private keys, tokens, and credentials must remain local and ignored by git.
 
-```powershell
-npm install
-npm run compile
-```
-
-Press `F5` in VS Code to run the Extension Development Host.
+See the root docs for LiteLLM/Modal setup, release checklist, VSIX packaging, and security/privacy guidance.

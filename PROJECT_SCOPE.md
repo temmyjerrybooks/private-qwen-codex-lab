@@ -1498,30 +1498,41 @@ Suggested files:
 
 ---
 
-# Phase 13 — Polish and Packaging
+# Phase 13 - Polish, Packaging, VSIX Readiness, and Release Checklist
 
 ## Goal
 
-Make the extension stable and professional.
+Prepare Borger as a professional local VS Code extension package without adding new major agent capabilities.
 
 ## Build
 
-* improved UI
-* better error messages
-* loading states
-* connection status
-* output channel logs
-* extension icon
-* packaged VSIX build
-* local install instructions
+* polished extension manifest metadata
+* command categories and clearer command palette labels
+* package icon and release-facing extension assets
+* project-local VSIX packaging scripts
+* extension changelog and private license
+* local setup quickstart
+* VSIX packaging documentation
+* release QA checklist
+* security and privacy documentation
+* README, usage, development, and troubleshooting updates
+* strengthened ignore rules for local Borger runtime files, real `.env` files, secrets, logs, ledgers, backups, and generated VSIX files
+* verified TypeScript checks, compile, and VSIX package build
 
 ## Acceptance Criteria
 
 * Extension can be packaged as `.vsix`
 * Extension can be installed locally
-* UI is clean and usable
-* Errors are understandable
-* Documentation is complete
+* Package metadata includes version, publisher placeholder, repository, license, categories, keywords, and icon
+* UI copy, empty states, and command labels are clearer
+* Errors and blocked actions remain understandable
+* Documentation includes release checklist, local setup quickstart, VSIX packaging, and security/privacy guidance
+* Auto Mode remains disabled by default
+* No secrets are added
+* No new SSH behavior, deployment automation, destructive Git behavior, or Marketplace publishing automation is added
+* `npm.cmd run check-types` passes
+* `npm.cmd run compile` passes
+* `npm.cmd run package` produces a local VSIX
 
 ---
 

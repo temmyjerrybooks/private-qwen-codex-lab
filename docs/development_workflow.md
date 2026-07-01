@@ -131,4 +131,16 @@
 5. Review the generated summary before relying on it in future tasks.
 6. Run `Borger: Clear Project Memory` when notes become stale or the workspace should forget local context.
 7. Expect Plan Mode, Fix Mode, proposed changes, and Auto Mode to use only the safe capped memory summary from workspace context.
-8. Keep packaging and VSIX release work for Phase 13.
+8. Review release docs before packaging a VSIX.
+
+## Packaging Workflow
+
+1. Keep the working tree clean before release QA.
+2. Run `npm.cmd install` inside `apps/vscode-extension`.
+3. Run `npm.cmd run check-types`.
+4. Run `npm.cmd run compile`.
+5. Run `npm.cmd run package`.
+6. Install the generated `.vsix` locally with `code --install-extension`.
+7. Run the release checklist in `docs/release_checklist.md`.
+8. Confirm `.borger/*.local.*`, logs, ledgers, backups, real `.env` files, private keys, tokens, credentials, and generated `.vsix` files are not staged.
+9. Do not publish to the VS Code Marketplace from Phase 13.

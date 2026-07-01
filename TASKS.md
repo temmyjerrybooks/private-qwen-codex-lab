@@ -233,6 +233,25 @@
 - Keep packaging, VSIX release, deployment automation, new SSH behavior, destructive Git behavior, and secret storage out of scope
 - Document Project Memory setup, usage, protection rules, and troubleshooting
 
+## Phase 13 - Polish, Packaging, VSIX Readiness, and Release Checklist
+
+- Polish VS Code extension package metadata
+- Add package icon and release-facing extension assets
+- Add command categories for cleaner command palette display
+- Add `@vscode/vsce` local packaging support
+- Add `npm run package` and `npm run vscode:prepublish`
+- Add extension changelog and private license
+- Add VSIX packaging ignore rules
+- Add local setup quickstart
+- Add VSIX packaging documentation
+- Add release checklist documentation
+- Add security and privacy documentation
+- Update README, usage docs, development workflow, and troubleshooting
+- Ensure local `.borger` runtime files, `.env` files, secrets, logs, ledgers, backups, and VSIX files are ignored
+- Verify `npm.cmd run check-types`, `npm.cmd run compile`, and `npm.cmd run package`
+- Keep Auto Mode disabled by default
+- Avoid new agent capabilities, deployment automation, SSH behavior, destructive Git behavior, and Marketplace publishing automation
+
 ## Later Phases
 
-- Phase 13: Polish and packaging
+- Phase 14: Recommended focus on end-to-end QA hardening and issue cleanup

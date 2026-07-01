@@ -388,4 +388,25 @@
 - `npm run compile` passes
 - `npm run check-types` passes
 
-Later phase acceptance criteria remain defined in `PROJECT_SCOPE.md`.
+## Phase 13
+
+- Package metadata is polished with display name, description, version, publisher placeholder, repository, license, categories, keywords, and icon path
+- Command palette entries use the Borger category
+- VSIX packaging script exists
+- Project-local `@vscode/vsce` packaging support exists
+- `apps/vscode-extension/CHANGELOG.md` exists
+- `apps/vscode-extension/LICENSE` exists
+- `apps/vscode-extension/.vscodeignore` exists
+- `docs/release_checklist.md` exists
+- `docs/security_privacy.md` exists
+- `docs/local_setup_quickstart.md` exists
+- `docs/vsix_packaging.md` exists
+- README is current and explains architecture, quickstart, LiteLLM/Modal, provider routing, permissions, Plan/Edit/Fix/Auto, Git workflow, Remote Ops, Project Memory, VSIX packaging, and safety
+- `.gitignore` protects local Borger runtime files, real `.env` files, secrets, logs, ledgers, backups, and generated VSIX files
+- Auto Mode remains disabled by default
+- No secrets are added
+- No new major agent capability is introduced
+- No new SSH behavior, deployment automation, destructive Git behavior, or Marketplace publishing automation is added
+- `npm.cmd run check-types` passes
+- `npm.cmd run compile` passes
+- `npm.cmd run package` produces a local `.vsix` file
